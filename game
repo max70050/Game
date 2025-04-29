@@ -51,6 +51,7 @@
     <div id="score">Punkte: 0</div>
     <div class="car" id="car"></div>
   </div>
+
   <script>
     const gameContainer = document.getElementById('game-container');
     const car = document.getElementById('car');
