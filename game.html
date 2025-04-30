@@ -22,8 +22,10 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            font-size: 20px;
+            font-size: 24px;
             color: white;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
         }
 
         #controls {
@@ -78,20 +80,37 @@
 
         let score = 0;
         let gameOver = false;
+        let obstacleSpeed = 3; // Startgeschwindigkeit
+        let speedIncreaseInterval = 5000; // Alle 5 Sekunden wird das Spiel schneller
 
         const car = {
             x: canvas.width / 2 - 25,
-            y: canvas.height - 100,
+            y: canvas.height - 120,
             width: 50,
             height: 100,
             color: 'blue',
             speed: 5,
             movingLeft: false,
-            movingRight: false
+            movingRight: false,
+            draw() {
+                // Auto-Design
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                // Reifen
+                ctx.fillStyle = 'black';
+                ctx.fillRect(this.x + 5, this.y + 10, 10, 20); // Vorderreifen links
+                ctx.fillRect(this.x + this.width - 15, this.y + 10, 10, 20); // Vorderreifen rechts
+                ctx.fillRect(this.x + 5, this.y + this.height - 30, 10, 20); // Hinterreifen links
+                ctx.fillRect(this.x + this.width - 15, this.y + this.height - 30, 10, 20); // Hinterreifen rechts
+
+                // Fenster
+                ctx.fillStyle = 'lightblue';
+                ctx.fillRect(this.x + 10, this.y + 20, this.width - 20, this.height - 40);
+            }
         };
 
         const obstacles = [];
-        const obstacleSpeed = 3;
 
         function drawRect(x, y, width, height, color) {
             ctx.fillStyle = color;
@@ -123,7 +142,7 @@
                 car.x = Math.min(canvas.width - car.width, car.x + car.speed);
             }
 
-            drawRect(car.x, car.y, car.width, car.height, car.color);
+            car.draw();
 
             // Update obstacles
             for (let i = 0; i < obstacles.length; i++) {
@@ -214,6 +233,13 @@
         setInterval(() => {
             if (!gameOver) createObstacle();
         }, 1000);
+
+        // Geschwindigkeit erhöhen
+        setInterval(() => {
+            if (!gameOver) {
+                obstacleSpeed += 0.5; // Hindernisse werden schneller
+            }
+        }, speedIncreaseInterval);
 
         update();
     </script>
