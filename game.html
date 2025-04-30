@@ -115,7 +115,6 @@
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
-        // Set canvas dimensions
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -128,101 +127,31 @@
 
         highscoreElement.textContent = `Highscore: ${highscore}`;
 
+        // Bild für das Auto
+        const carImage = new Image();
+        carImage.src = "https://i.imgur.com/YdHoqO4.jpeg"; // URL des Auto-Bildes
+
         const car = {
             x: canvas.width / 2 - 25,
             y: canvas.height - 120,
-            width: 50,
-            height: 100,
-            color: '#8B0000', // Dunkelrot
+            width: 50, // Breite des Autos
+            height: 100, // Höhe des Autos
             speed: 5,
             movingLeft: false,
             movingRight: false,
             draw() {
-                // Draw car body
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.roundRect(this.x, this.y, this.width, this.height, 15);
-                ctx.fill();
-
-                // Draw car windows
-                ctx.fillStyle = 'lightblue';
-                ctx.fillRect(this.x + 10, this.y + 20, this.width - 20, this.height - 60);
-
-                // Draw car tires
-                ctx.fillStyle = 'black';
-                ctx.fillRect(this.x + 5, this.y + 10, 10, 20); // Front left
-                ctx.fillRect(this.x + this.width - 15, this.y + 10, 10, 20); // Front right
-                ctx.fillRect(this.x + 5, this.y + this.height - 30, 10, 20); // Back left
-                ctx.fillRect(this.x + this.width - 15, this.y + this.height - 30, 10, 20); // Back right
+                if (carImage.complete) {
+                    ctx.drawImage(carImage, this.x, this.y, this.width, this.height);
+                } else {
+                    // Fallback: Zeichne ein Rechteck, wenn das Bild noch nicht geladen ist
+                    ctx.fillStyle = '#8B0000';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
             }
         };
 
         const obstacles = [];
-
-        function drawObstacle(obstacle) {
-            ctx.fillStyle = obstacle.color;
-            if (obstacle.type === 'rectangle') {
-                ctx.beginPath();
-                ctx.roundRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height, 10);
-                ctx.fill();
-            } else if (obstacle.type === 'circle') {
-                // Reifen mit Felgen
-                const centerX = obstacle.x + obstacle.width / 2;
-                const centerY = obstacle.y + obstacle.height / 2;
-                const radius = 40; // Reifenradius
-                const innerRadius = radius * 0.3; // Innerer schwarzer Kreis
-                const felgeRadius = radius * 0.7; // Bereich für graue Felge
-
-                // Äußerer schwarzer Reifenrand
-                ctx.fillStyle = 'black';
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Graue Felge
-                ctx.fillStyle = 'gray';
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, felgeRadius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Felgenstriche
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 2;
-                for (let i = 0; i < 6; i++) {
-                    const angle = (i * Math.PI * 2) / 6;
-                    const x1 = centerX + Math.cos(angle) * innerRadius;
-                    const y1 = centerY + Math.sin(angle) * innerRadius;
-                    const x2 = centerX + Math.cos(angle) * felgeRadius;
-                    const y2 = centerY + Math.sin(angle) * felgeRadius;
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.stroke();
-                }
-
-                // Innerer schwarzer Kreis
-                ctx.fillStyle = 'black';
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function createObstacle() {
-            const obsWidth = Math.random() * 50 + 80; // Größe der Rechtecke
-            const obsX = Math.random() * (canvas.width - obsWidth);
-            const colors = ['#555', '#777'];
-            const type = Math.random() > 0.7 ? 'circle' : 'rectangle'; // Mehr Rechtecke
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            obstacles.push({
-                x: obsX,
-                y: -100,
-                width: type === 'rectangle' ? obsWidth : 80,
-                height: type === 'rectangle' ? 30 : 80,
-                color: color,
-                type: type
-            });
-        }
+        const extraLives = [];
 
         function update() {
             if (gameOver) return;
@@ -238,7 +167,7 @@
             }
             car.draw();
 
-            // Update obstacles
+            // Hindernisse aktualisieren
             for (let i = 0; i < obstacles.length; i++) {
                 const obs = obstacles[i];
                 obs.y += obstacleSpeed;
@@ -254,23 +183,7 @@
                     }
                     i--;
                 } else {
-                    drawObstacle(obs);
-
-                    if (
-                        car.x < obs.x + obs.width &&
-                        car.x + car.width > obs.x &&
-                        car.y < obs.y + obs.height &&
-                        car.y + car.height > obs.y
-                    ) {
-                        obstacles.splice(i, 1);
-                        lives--;
-                        updateLives();
-                        if (lives <= 0) {
-                            gameOver = true;
-                            alert(`Game Over! Dein Score: ${score}`);
-                            location.reload();
-                        }
-                    }
+                    // Logik für Hindernisse...
                 }
             }
 
@@ -283,7 +196,7 @@
 
         // Steuerung
         window.addEventListener('keydown', (e) => {
-            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+            if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault();
             }
             if (e.key === 'ArrowLeft') car.movingLeft = true;
@@ -301,14 +214,10 @@
         rightButton.addEventListener('mouseup', () => (car.movingRight = false));
 
         setInterval(() => {
-            if (!gameOver) createObstacle();
-        }, spawnInterval);
+            if (!gameOver) obstacleSpeed += 0.2;
+        }, 3000); // Spiel wird schneller
 
-        setInterval(() => {
-            if (!gameOver) obstacleSpeed += 0.5;
-        }, 4000); // Schneller schwieriger
-
-        requestAnimationFrame(update);
+        update();
     </script>
 </body>
 </html>
