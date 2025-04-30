@@ -300,6 +300,24 @@
         rightButton.addEventListener('mousedown', () => (car.movingRight = true));
         rightButton.addEventListener('mouseup', () => (car.movingRight = false));
 
+        leftButton.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    car.movingLeft = true;
+});
+leftButton.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    car.movingLeft = false;
+});
+rightButton.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    car.movingRight = true;
+});
+rightButton.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    car.movingRight = false;
+});
+
+
         setInterval(() => {
             if (!gameOver) createObstacle();
         }, spawnInterval);
