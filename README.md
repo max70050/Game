@@ -35,7 +35,7 @@
             top: 20px;
             left: 20px;
             font-size: 24px;
-            color: red; /* Lebensanzeige in Rot */
+            color: red;
             font-family: Arial, sans-serif;
             font-weight: bold;
             z-index: 10;
@@ -102,6 +102,7 @@
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
+        // Set canvas size dynamically
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -186,9 +187,9 @@
         }
 
         function drawExtra(extra) {
-            ctx.fillStyle = 'red';
+            ctx.fillStyle = 'green';
             ctx.beginPath();
-            ctx.arc(extra.x, extra.y, 15, 0, Math.PI * 2); // Extra-Leben als roter Kreis
+            ctx.arc(extra.x, extra.y, 15, 0, Math.PI * 2); // Extra-Leben als grüner Kreis
             ctx.fill();
         }
 
@@ -209,7 +210,7 @@
         }
 
         function createExtra() {
-            if (Math.random() > 0.98) { // Seltene Wahrscheinlichkeit
+            if (Math.random() > 0.95) { // Seltene Wahrscheinlichkeit für Extras
                 const extraX = Math.random() * (canvas.width - 30);
                 extras.push({
                     x: extraX,
