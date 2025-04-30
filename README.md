@@ -1,250 +1,276 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rennspiel Deluxe</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-        html, body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-        canvas {
-            background: #2c2c2c;
-            display: block;
-        }
-        #ui {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-        }
-        #score, #highscore, #lives {
-            position: absolute;
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 8px;
-        }
-        #score { top: 10px; left: 50%; transform: translateX(-50%); }
-        #highscore { top: 10px; right: 10px; }
-        #lives { top: 10px; left: 10px; color: red; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreetRacers: Nitro Rush</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: sans-serif;
+    }
 
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 20px;
-            pointer-events: auto;
-        }
-        .button {
-            width: 80px;
-            height: 80px;
-            font-size: 32px;
-            font-weight: bold;
-            border: none;
-            border-radius: 50%;
-            background: #444;
-            color: white;
-            cursor: pointer;
-        }
-        .button:active {
-            background: #666;
-        }
-        #startScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            z-index: 20;
-        }
-        #startScreen button {
-            padding: 15px 30px;
-            font-size: 24px;
-            margin-top: 20px;
-            background: limegreen;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-    </style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #111;
+      overflow: hidden;
+    }
+
+    #gameArea {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90vw;
+      max-width: 500px;
+      height: 80vh;
+      background: linear-gradient(#333, #555);
+      border: 3px solid #aaa;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #player, .obstacle, .heart {
+      position: absolute;
+    }
+
+    #player {
+      width: 40px;
+      height: 60px;
+      background: url('https://i.imgur.com/8Q0l6Rv.png') no-repeat center/contain; /* stylisiertes Auto */
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .obstacle {
+      width: 40px;
+      height: 40px;
+      background: url('https://i.imgur.com/BziHFaR.png') no-repeat center/contain; /* stylisierter Reifen */
+    }
+
+    .heart {
+      width: 30px;
+      height: 30px;
+      background: url('https://i.imgur.com/hbyrMeS.png') no-repeat center/contain; /* grünes Herz */
+    }
+
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      z-index: 10;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    #startScreen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: white;
+      z-index: 20;
+    }
+
+    #startButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 20px;
+      background: #00cc66;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 30px;
+    }
+
+    .controls button {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      border-radius: 50%;
+      border: none;
+      background: #666;
+      color: white;
+      opacity: 0.8;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+  <div id="gameArea">
     <div id="ui">
-        <div id="score">Score: 0</div>
-        <div id="highscore">Highscore: 0</div>
-        <div id="lives">❤️❤️❤️</div>
-        <div id="controls">
-            <button class="button" id="leftBtn">←</button>
-            <button class="button" id="rightBtn">→</button>
-        </div>
+      <div>Leben: <span id="lives">3</span></div>
+      <div>Score: <span id="score">0</span></div>
+      <div>Highscore: <span id="highscore">0</span></div>
     </div>
+
+    <div id="player"></div>
+    <div class="controls">
+      <button id="leftBtn">⬅️</button>
+      <button id="rightBtn">➡️</button>
+    </div>
+
     <div id="startScreen">
-        <h1>Rennspiel Deluxe</h1>
-        <button id="startBtn">Starten</button>
+      <h1>StreetRacers: Nitro Rush</h1>
+      <button id="startButton">Start</button>
     </div>
+  </div>
 
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+  <audio id="crashSound" src="https://freesound.org/data/previews/175/175103_2394245-lq.mp3"></audio>
 
-        const startScreen = document.getElementById("startScreen");
-        const startBtn = document.getElementById("startBtn");
-        const scoreEl = document.getElementById("score");
-        const highscoreEl = document.getElementById("highscore");
-        const livesEl = document.getElementById("lives");
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const player = document.getElementById('player');
+    const scoreSpan = document.getElementById('score');
+    const highscoreSpan = document.getElementById('highscore');
+    const livesSpan = document.getElementById('lives');
+    const crashSound = document.getElementById('crashSound');
+    const startScreen = document.getElementById('startScreen');
 
-        const leftBtn = document.getElementById("leftBtn");
-        const rightBtn = document.getElementById("rightBtn");
+    const gameWidth = gameArea.clientWidth;
+    const gameHeight = gameArea.clientHeight;
+    let playerX = gameWidth / 2 - 20;
+    let playerSpeed = 5;
+    let score = 0;
+    let highscore = 0;
+    let lives = 3;
+    let level = 1;
+    let running = false;
 
-        let gameRunning = false;
-        let score = 0;
-        let highscore = localStorage.getItem("highscore") || 0;
-        let lives = 3;
-        let level = 1;
-        let speed = 3;
+    const obstacles = [];
+    const hearts = [];
 
-        highscoreEl.textContent = `Highscore: ${highscore}`;
+    function createObstacle() {
+      const obstacle = document.createElement('div');
+      obstacle.className = 'obstacle';
+      obstacle.style.left = Math.random() * (gameWidth - 40) + 'px';
+      obstacle.style.top = '-40px';
+      gameArea.appendChild(obstacle);
+      obstacles.push(obstacle);
+    }
 
-        // Auto
-        const car = {
-            x: canvas.width / 2 - 25,
-            y: canvas.height - 120,
-            width: 50,
-            height: 100,
-            color: "red",
-            movingLeft: false,
-            movingRight: false,
-            speed: 5,
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-            }
-        };
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.style.left = Math.random() * (gameWidth - 30) + 'px';
+      heart.style.top = '-30px';
+      gameArea.appendChild(heart);
+      hearts.push(heart);
+    }
 
-        // Gegner
-        const obstacles = [];
+    function update() {
+      if (!running) return;
+      // Move player
+      player.style.left = playerX + 'px';
 
-        function spawnObstacle() {
-            const size = 40;
-            const x = Math.random() * (canvas.width - size);
-            obstacles.push({ x, y: -size, size });
+      // Clamp to borders
+      if (playerX < 0) playerX = 0;
+      if (playerX > gameWidth - 40) playerX = gameWidth - 40;
+
+      // Move obstacles
+      for (let i = 0; i < obstacles.length; i++) {
+        const o = obstacles[i];
+        o.style.top = o.offsetTop + level + 'px';
+        if (o.offsetTop > gameHeight) {
+          o.remove();
+          obstacles.splice(i, 1);
+          i--;
+          score++;
+          if (score % 10 === 0) level++;
+        } else if (checkCollision(player, o)) {
+          crashSound.play();
+          navigator.vibrate?.(100);
+          o.remove();
+          obstacles.splice(i, 1);
+          i--;
+          lives--;
+          if (lives <= 0) {
+            endGame();
+            return;
+          }
         }
+      }
 
-        function drawObstacle(o) {
-            ctx.fillStyle = "gray";
-            ctx.beginPath();
-            ctx.arc(o.x + o.size / 2, o.y + o.size / 2, o.size / 2, 0, Math.PI * 2);
-            ctx.fill();
+      // Move hearts
+      for (let i = 0; i < hearts.length; i++) {
+        const h = hearts[i];
+        h.style.top = h.offsetTop + 2 + 'px';
+        if (h.offsetTop > gameHeight) {
+          h.remove();
+          hearts.splice(i, 1);
+          i--;
+        } else if (checkCollision(player, h)) {
+          h.remove();
+          hearts.splice(i, 1);
+          i--;
+          lives++;
         }
+      }
 
-        function update() {
-            if (!gameRunning) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+      scoreSpan.textContent = score;
+      livesSpan.textContent = lives;
 
-            // Auto bewegen
-            if (car.movingLeft) car.x -= car.speed;
-            if (car.movingRight) car.x += car.speed;
+      requestAnimationFrame(update);
+    }
 
-            car.x = Math.max(0, Math.min(canvas.width - car.width, car.x));
-            car.draw();
+    function checkCollision(a, b) {
+      const aRect = a.getBoundingClientRect();
+      const bRect = b.getBoundingClientRect();
+      return !(
+        aRect.bottom < bRect.top ||
+        aRect.top > bRect.bottom ||
+        aRect.right < bRect.left ||
+        aRect.left > bRect.right
+      );
+    }
 
-            // Hindernisse
-            for (let i = 0; i < obstacles.length; i++) {
-                const o = obstacles[i];
-                o.y += speed;
-                drawObstacle(o);
+    function endGame() {
+      running = false;
+      if (score > highscore) highscore = score;
+      highscoreSpan.textContent = highscore;
+      startScreen.style.display = 'flex';
+      score = 0;
+      lives = 3;
+      level = 1;
+      [...obstacles, ...hearts].forEach(el => el.remove());
+      obstacles.length = 0;
+      hearts.length = 0;
+    }
 
-                if (
-                    car.x < o.x + o.size &&
-                    car.x + car.width > o.x &&
-                    car.y < o.y + o.size &&
-                    car.y + car.height > o.y
-                ) {
-                    obstacles.splice(i, 1);
-                    i--;
-                    lives--;
-                    navigator.vibrate?.(200);
-                    if (lives <= 0) {
-                        gameOver();
-                        return;
-                    }
-                    updateLives();
-                }
+    document.getElementById('startButton').onclick = () => {
+      startScreen.style.display = 'none';
+      running = true;
+      update();
+      setInterval(createObstacle, 1000);
+      setInterval(createHeart, 5000);
+    };
 
-                if (o.y > canvas.height) {
-                    obstacles.splice(i, 1);
-                    i--;
-                    score++;
-                    scoreEl.textContent = `Score: ${score}`;
+    document.getElementById('leftBtn').ontouchstart = () => playerX -= playerSpeed * 4;
+    document.getElementById('rightBtn').ontouchstart = () => playerX += playerSpeed * 4;
 
-                    if (score % 10 === 0) {
-                        level++;
-                        speed += 0.5;
-                    }
-                }
-            }
-
-            requestAnimationFrame(update);
-        }
-
-        function updateLives() {
-            livesEl.innerHTML = "❤️".repeat(lives);
-        }
-
-        function gameOver() {
-            gameRunning = false;
-            if (score > highscore) {
-                highscore = score;
-                localStorage.setItem("highscore", highscore);
-            }
-            alert("Game Over! Score: " + score);
-            location.reload();
-        }
-
-        // Steuerung
-        window.addEventListener("keydown", e => {
-            if (e.key === "ArrowLeft") car.movingLeft = true;
-            if (e.key === "ArrowRight") car.movingRight = true;
-        });
-        window.addEventListener("keyup", e => {
-            if (e.key === "ArrowLeft") car.movingLeft = false;
-            if (e.key === "ArrowRight") car.movingRight = false;
-        });
-
-        leftBtn.addEventListener("touchstart", () => car.movingLeft = true);
-        leftBtn.addEventListener("touchend", () => car.movingLeft = false);
-        rightBtn.addEventListener("touchstart", () => car.movingRight = true);
-        rightBtn.addEventListener("touchend", () => car.movingRight = false);
-
-        startBtn.addEventListener("click", () => {
-            startScreen.style.display = "none";
-            gameRunning = true;
-            setInterval(spawnObstacle, 1500);
-            update();
-        });
-    </script>
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') playerX -= playerSpeed;
+      if (e.key === 'ArrowRight') playerX += playerSpeed;
+    });
+  </script>
 </body>
 </html>
