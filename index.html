@@ -20,7 +20,7 @@
 
     #ui {
       position: absolute;
-      top: 0;
+      top: 10px; /* 10 Pixel nach unten verschoben */
       left: 0;
       width: 100%;
       padding: 10px;
@@ -83,6 +83,34 @@
       cursor: pointer;
       margin-top: 20px;
     }
+
+    #touchControls {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 40px;
+      z-index: 2;
+    }
+
+    .controlBtn {
+      width: 80px;
+      height: 80px;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 10px;
+    }
+
+    .controlBtn svg {
+      width: 40px;
+      height: 40px;
+      fill: white;
+    }
   </style>
 </head>
 <body>
@@ -103,6 +131,19 @@
   <button id="restartButton">Restart</button>
 </div>
 
+<div id="touchControls">
+  <button class="controlBtn" id="leftBtn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+    </svg>
+  </button>
+  <button class="controlBtn" id="rightBtn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+    </svg>
+  </button>
+</div>
+
 <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -117,6 +158,8 @@
   const highscoreDisplay = document.getElementById("highscore");
   const startScreen = document.getElementById("startScreen");
   const gameOverScreen = document.getElementById("gameOverScreen");
+  const leftBtn = document.getElementById("leftBtn");
+  const rightBtn = document.getElementById("rightBtn");
   const startButton = document.getElementById("startButton");
   const restartButton = document.getElementById("restartButton");
 
@@ -130,6 +173,9 @@
 
   startButton.addEventListener("click", startGame);
   restartButton.addEventListener("click", restartGame);
+
+  leftBtn.addEventListener("touchstart", () => (car.x -= car.speed));
+  rightBtn.addEventListener("touchstart", () => (car.x += car.speed));
 
   function startGame() {
     startScreen.classList.add("hidden");
@@ -161,80 +207,17 @@
   }
 
   function drawCar() {
-    // Rotes Auto mit Fenstern und Scheinwerfern
     ctx.fillStyle = "red";
     ctx.fillRect(car.x, car.y, car.width, car.height);
 
-    ctx.fillStyle = "black";
-    ctx.fillRect(car.x + 10, car.y + 10, car.width - 20, car.height / 2);
-
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(car.x + 5, car.y + car.height - 10, car.width - 10, 5);
-  }
-
-  function drawObstacle(obs) {
-    if (obs.type === "rect") {
-      ctx.fillStyle = obs.color;
-      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-    } else {
-      drawReifen(obs.x + 25, obs.y + 25);
-    }
-  }
-
-  function drawReifen(x, y) {
-    const radius = 25;
-    const innerRadius = radius * 0.3;
-    const felgeRadius = radius * 0.7;
-
-    // Äußerer schwarzer Rand
-    ctx.fillStyle = "black";
+    // Scheinwerfer-Lichtpegel
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
     ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.moveTo(car.x + car.width / 2, car.y);
+    ctx.lineTo(car.x - 50, car.y - 100);
+    ctx.lineTo(car.x + car.width + 50, car.y - 100);
+    ctx.closePath();
     ctx.fill();
-
-    // Graue Felge
-    ctx.fillStyle = "gray";
-    ctx.beginPath();
-    ctx.arc(x, y, felgeRadius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Speichen
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1.5;
-    for (let i = 0; i < 6; i++) {
-      const angle = (i * Math.PI * 2) / 6;
-      const x1 = x + Math.cos(angle) * innerRadius;
-      const y1 = y + Math.sin(angle) * innerRadius;
-      const x2 = x + Math.cos(angle) * felgeRadius;
-      const y2 = y + Math.sin(angle) * felgeRadius;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
-
-    // Innerer schwarzer Kreis
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(x, y, innerRadius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function spawnObstacle() {
-    const type = Math.random() > 0.7 ? "circle" : "rect";
-    const color = Math.random() > 0.5 ? "darkgray" : "lightgray";
-    if (type === "circle") {
-      obstacles.push({ x: Math.random() * (canvas.width - 50), y: -50, type });
-    } else {
-      obstacles.push({
-        x: Math.random() * (canvas.width - 100),
-        y: -30,
-        width: Math.random() * 50 + gameSpeed * 10,
-        height: 30,
-        color,
-        type
-      });
-    }
   }
 
   function update() {
@@ -244,39 +227,10 @@
 
     drawCar();
 
-    if (Math.random() < 0.02) spawnObstacle();
-
-    obstacles.forEach((obs, index) => {
-      obs.y += gameSpeed;
-
-      drawObstacle(obs);
-
-      if (
-        obs.y + (obs.type === "rect" ? obs.height : 50) > car.y &&
-        obs.y < car.y + car.height &&
-        obs.x + (obs.type === "rect" ? obs.width : 50) > car.x &&
-        obs.x < car.x + car.width
-      ) {
-        obstacles.splice(index, 1);
-        hearts--;
-        if (hearts <= 0) {
-          running = false;
-          gameOverScreen.classList.remove("hidden");
-          document.querySelector(".score").textContent = `Dein Score: ${score}`;
-        }
-      }
-
-      if (obs.y > canvas.height) {
-        obstacles.splice(index, 1);
-        score += obs.type === "rect" ? 20 : 10;
-        if (score > highscore) highscore = score;
-        gameSpeed += 0.001;
-      }
-    });
-
-    updateUI();
     requestAnimationFrame(update);
   }
+
+  resetGame();
 </script>
 </body>
 </html>
