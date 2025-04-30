@@ -1,184 +1,226 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turbo Racer Game</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-        canvas {
-            background-color: #D3D3D3;
-            display: block;
-            margin: 0 auto;
-        }
-        #startButton {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 25px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        #startButton:hover {
-            background-color: #45a049;
-        }
-        #scoreboard {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #000;
-            font-size: 20px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpeedRush</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #333;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: #555;
+      border: 5px solid #222;
+    }
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+      color: white;
+      font-weight: bold;
+      z-index: 10;
+    }
+    #startScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+      color: white;
+    }
+    #startBtn {
+      padding: 15px 30px;
+      font-size: 20px;
+      background: limegreen;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #gameOverMsg {
+      color: red;
+      font-size: 24px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-
-<canvas id="gameCanvas"></canvas>
-
-<button id="startButton">Start Game</button>
-<div id="scoreboard">Score: 0 | Highscore: 0</div>
-
+<div id="hud">
+  <div>❤️ x<span id="lives">3</span></div>
+  <div>Score: <span id="score">0</span></div>
+  <div>Highscore: <span id="highscore">0</span></div>
+</div>
+<div id="startScreen">
+  <h1>SpeedRush</h1>
+  <button id="startBtn">Start</button>
+  <div id="gameOverMsg"></div>
+</div>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const startButton = document.getElementById('startButton');
-    const scoreboard = document.getElementById('scoreboard');
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+let car = { x: 180, y: 500, width: 40, height: 80, speed: 5 };
+let keys = {};
+let obstacles = [], hearts = [], slows = [];
+let lives = 3, score = 0, highscore = 0;
+let gameInterval, obstacleInterval, heartInterval, slowInterval;
+let gameRunning = false;
+let slowMode = false;
+let showCrash = false;
 
-    let car, obstacles = [], lives = 3, score = 0, highscore = 0;
-    let gameInterval, boostItem, isBoosted = false, boostTime = 0;
-    const carWidth = 40, carHeight = 70;
-    const obstacleWidth = 50, obstacleHeight = 50;
-    let gameStarted = false;
+function drawCar() {
+  ctx.fillStyle = "deepskyblue";
+  ctx.fillRect(car.x, car.y, car.width, car.height);
+  ctx.fillStyle = "white";
+  ctx.fillRect(car.x + 15, car.y + 10, 10, 10); // Fenster
+}
 
-    const carImg = new Image();
-    carImg.src = 'car.png';  // Replace with actual image path
+function drawObstacle(o) {
+  ctx.fillStyle = o.type === "circle" ? "#000" : "#900";
+  if (o.type === "circle") {
+    ctx.beginPath();
+    ctx.arc(o.x, o.y, o.size, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.fillRect(o.x, o.y, o.size * 1.5, o.size);
+  }
+}
 
-    canvas.width = window.innerWidth - 20;
-    canvas.height = window.innerHeight - 100;
+function drawHeart(h) {
+  ctx.fillStyle = "lime";
+  ctx.beginPath();
+  ctx.arc(h.x, h.y, 10, 0, Math.PI * 2);
+  ctx.fill();
+}
 
-    function startGame() {
-        startButton.style.display = 'none';
-        gameStarted = true;
-        car = { x: canvas.width / 2 - carWidth / 2, y: canvas.height - carHeight - 30, width: carWidth, height: carHeight };
-        obstacles = [];
-        lives = 3;
-        score = 0;
-        boostItem = null;
-        isBoosted = false;
-        boostTime = 0;
-        gameInterval = setInterval(gameLoop, 1000 / 60);
+function drawSlow(s) {
+  ctx.fillStyle = "blue";
+  ctx.beginPath();
+  ctx.moveTo(s.x, s.y);
+  ctx.lineTo(s.x - 10, s.y + 20);
+  ctx.lineTo(s.x + 10, s.y + 20);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawCrash() {
+  if (showCrash) {
+    ctx.fillStyle = "yellow";
+    ctx.font = "30px sans-serif";
+    ctx.fillText("💥", car.x, car.y);
+  }
+}
+
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (keys["ArrowLeft"] && car.x > 0) car.x -= car.speed;
+  if (keys["ArrowRight"] && car.x + car.width < canvas.width) car.x += car.speed;
+  drawCar();
+
+  obstacles.forEach((o, i) => {
+    o.y += slowMode ? 1 : 3;
+    drawObstacle(o);
+    if (
+      car.x < o.x + o.size * 1.5 &&
+      car.x + car.width > o.x &&
+      car.y < o.y + o.size &&
+      car.y + car.height > o.y
+    ) {
+      showCrash = true;
+      lives--;
+      obstacles.splice(i, 1);
+      navigator.vibrate(200);
+      setTimeout(() => (showCrash = false), 300);
     }
+  });
 
-    function gameLoop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawCar();
-        moveObstacles();
-        generateObstacles();
-        detectCollisions();
-        updateScoreboard();
-
-        if (isBoosted) {
-            boostTime--;
-            if (boostTime <= 0) {
-                isBoosted = false;
-            }
-        }
-
-        if (score % 10 === 0 && score > 0) {
-            spawnBoostItem();
-        }
+  hearts.forEach((h, i) => {
+    h.y += 2;
+    drawHeart(h);
+    if (
+      car.x < h.x + 10 &&
+      car.x + car.width > h.x - 10 &&
+      car.y < h.y + 10 &&
+      car.y + car.height > h.y - 10
+    ) {
+      if (lives < 5) lives++;
+      hearts.splice(i, 1);
     }
+  });
 
-    function drawCar() {
-        ctx.drawImage(carImg, car.x, car.y, car.width, car.height);
+  slows.forEach((s, i) => {
+    s.y += 2;
+    drawSlow(s);
+    if (
+      car.x < s.x + 10 &&
+      car.x + car.width > s.x - 10 &&
+      car.y < s.y + 20 &&
+      car.y + car.height > s.y
+    ) {
+      slows.splice(i, 1);
+      slowMode = true;
+      setTimeout(() => (slowMode = false), 5000);
     }
+  });
 
-    function moveCar(e) {
-        if (e.key === 'ArrowLeft' && car.x > 0) {
-            car.x -= 10;
-        }
-        if (e.key === 'ArrowRight' && car.x < canvas.width - car.width) {
-            car.x += 10;
-        }
-    }
+  score++;
+  if (score > highscore) highscore = score;
+  document.getElementById("lives").innerText = lives;
+  document.getElementById("score").innerText = score;
+  document.getElementById("highscore").innerText = highscore;
 
-    function generateObstacles() {
-        if (Math.random() < 0.02) {
-            const obstacleX = Math.random() * (canvas.width - obstacleWidth);
-            obstacles.push({ x: obstacleX, y: -obstacleHeight });
-        }
+  if (lives <= 0) endGame();
+}
 
-        obstacles.forEach((obstacle, index) => {
-            if (obstacle.y > canvas.height) {
-                obstacles.splice(index, 1);
-                score++;
-            } else {
-                obstacle.y += (isBoosted ? 2 : 5);
-            }
-            ctx.fillStyle = 'red';
-            ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
-        });
-    }
+function startGame() {
+  car.x = 180;
+  lives = 3;
+  score = 0;
+  obstacles = [];
+  hearts = [];
+  slows = [];
+  gameRunning = true;
+  document.getElementById("startScreen").style.display = "none";
+  gameInterval = setInterval(update, 30);
+  obstacleInterval = setInterval(() => {
+    let type = Math.random() < 0.3 ? "circle" : "rect";
+    let size = 20 + Math.random() * 20;
+    obstacles.push({ x: Math.random() * 360, y: 0, size, type });
+  }, 800);
+  heartInterval = setInterval(() => {
+    hearts.push({ x: Math.random() * 380, y: 0 });
+  }, 7000);
+  slowInterval = setInterval(() => {
+    slows.push({ x: Math.random() * 380, y: 0 });
+  }, 10000);
+}
 
-    function spawnBoostItem() {
-        if (boostItem) return;
-        const boostX = Math.random() * (canvas.width - 30);
-        boostItem = { x: boostX, y: -30 };
-    }
+function endGame() {
+  clearInterval(gameInterval);
+  clearInterval(obstacleInterval);
+  clearInterval(heartInterval);
+  clearInterval(slowInterval);
+  gameRunning = false;
+  document.getElementById("startScreen").style.display = "flex";
+  document.getElementById("gameOverMsg").innerText = `Game Over! Dein Score: ${score}`;
+}
 
-    function drawBoostItem() {
-        if (boostItem) {
-            boostItem.y += 2;
-            ctx.fillStyle = 'blue';
-            ctx.fillRect(boostItem.x, boostItem.y, 30, 30);
-        }
-    }
-
-    function detectCollisions() {
-        obstacles.forEach((obstacle) => {
-            if (car.x < obstacle.x + obstacleWidth &&
-                car.x + carWidth > obstacle.x &&
-                car.y < obstacle.y + obstacleHeight &&
-                car.y + carHeight > obstacle.y) {
-                lives--;
-                if (lives <= 0) {
-                    endGame();
-                }
-            }
-        });
-
-        if (boostItem && car.x < boostItem.x + 30 && car.x + carWidth > boostItem.x && car.y < boostItem.y + 30 && car.y + carHeight > boostItem.y) {
-            isBoosted = true;
-            boostTime = 300; // 5 seconds of boost
-            boostItem = null;
-        }
-    }
-
-    function updateScoreboard() {
-        scoreboard.innerText = `Score: ${score} | Highscore: ${highscore}`;
-    }
-
-    function endGame() {
-        clearInterval(gameInterval);
-        if (score > highscore) {
-            highscore = score;
-        }
-        alert('Game Over!');
-        startButton.style.display = 'block';
-    }
-
-    startButton.addEventListener('click', startGame);
-    window.addEventListener('keydown', moveCar);
-
-    // Set initial game state
-    startButton.style.display = 'block';
+document.getElementById("startBtn").onclick = startGame;
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
 </script>
 </body>
 </html>
