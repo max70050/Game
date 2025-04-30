@@ -23,7 +23,18 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 30px;
+            font-size: 20px;
+            color: black;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        #highscore {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 20px;
             color: black;
             font-family: Arial, sans-serif;
             font-weight: bold;
@@ -34,7 +45,7 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            font-size: 24px;
+            font-size: 20px;
             color: red;
             font-family: Arial, sans-serif;
             font-weight: bold;
@@ -54,8 +65,8 @@
         }
 
         .button {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             background-color: #555;
             color: white;
             font-size: 24px;
@@ -88,6 +99,7 @@
 </head>
 <body>
     <div id="score">Score: 0</div>
+    <div id="highscore">Highscore: 0</div>
     <div id="lives">❤️❤️❤️</div>
     <canvas id="gameCanvas"></canvas>
     <div id="controls">
@@ -98,6 +110,7 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
+        const highscoreElement = document.getElementById('highscore');
         const livesElement = document.getElementById('lives');
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
@@ -107,11 +120,14 @@
         canvas.height = window.innerHeight;
 
         let score = 0;
+        let highscore = localStorage.getItem('highscore') || 0;
         let lives = 3;
         let gameOver = false;
         let obstacleSpeed = 3;
         let spawnInterval = 1000;
         let speedIncreaseInterval = 5000;
+
+        highscoreElement.textContent = `Highscore: ${highscore}`;
 
         const car = {
             x: canvas.width / 2 - 25,
@@ -143,7 +159,6 @@
         };
 
         const obstacles = [];
-        const extras = [];
 
         function drawObstacle(obstacle) {
             ctx.fillStyle = obstacle.color;
@@ -155,7 +170,7 @@
                 // Reifen mit Felgen
                 const centerX = obstacle.x + obstacle.width / 2;
                 const centerY = obstacle.y + obstacle.height / 2;
-                const radius = 40; // Größere Reifen
+                const radius = 35; // Mittlere Reifen
                 ctx.fillStyle = 'black';
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
@@ -163,15 +178,15 @@
 
                 ctx.fillStyle = 'gray';
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.strokeStyle = 'black';
                 ctx.lineWidth = 2;
                 for (let i = 0; i < 6; i++) {
                     const angle = (i * Math.PI * 2) / 6;
-                    const x1 = centerX + Math.cos(angle) * radius * 0.6;
-                    const y1 = centerY + Math.sin(angle) * radius * 0.6;
+                    const x1 = centerX + Math.cos(angle) * radius * 0.7;
+                    const y1 = centerY + Math.sin(angle) * radius * 0.7;
                     const x2 = centerX + Math.cos(angle) * radius;
                     const y2 = centerY + Math.sin(angle) * radius;
                     ctx.beginPath();
@@ -179,11 +194,16 @@
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                 }
+
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * 0.3, 0, Math.PI * 2); // Innerer schwarzer Kreis
+                ctx.fill();
             }
         }
 
         function createObstacle() {
-            const obsWidth = Math.random() * 50 + (Math.random() > 0.7 ? 80 : 30);
+            const obsWidth = Math.random() * 50 + 80; // Rechtecke sind größer
             const obsX = Math.random() * (canvas.width - obsWidth);
             const colors = ['#555', '#777'];
             const type = Math.random() > 0.7 ? 'circle' : 'rectangle'; // Mehr Rechtecke
@@ -191,8 +211,8 @@
             obstacles.push({
                 x: obsX,
                 y: -100,
-                width: type === 'rectangle' ? obsWidth : 80, // Große Reifen
-                height: type === 'rectangle' ? 30 : 80, // Reifen fixieren
+                width: type === 'rectangle' ? obsWidth : 70, // Reifen mittlere Größe
+                height: type === 'rectangle' ? 30 : 70, // Reifen fixieren
                 color: color,
                 type: type
             });
@@ -225,6 +245,11 @@
                         score += 5; // Reifen = 5 Punkte
                     }
                     scoreElement.textContent = `Score: ${score}`;
+                    if (score > highscore) {
+                        highscore = score;
+                        highscoreElement.textContent = `Highscore: ${highscore}`;
+                        localStorage.setItem('highscore', highscore);
+                    }
                     i--;
                 } else {
                     drawObstacle(obs);
@@ -265,9 +290,18 @@
             if (e.key === 'ArrowRight') car.movingRight = false;
         });
 
+        leftButton.addEventListener('mousedown', () => (car.movingLeft = true));
+        leftButton.addEventListener('mouseup', () => (car.movingLeft = false));
+        rightButton.addEventListener('mousedown', () => (car.movingRight = true));
+        rightButton.addEventListener('mouseup', () => (car.movingRight = false));
+
         setInterval(() => {
             if (!gameOver) createObstacle();
         }, spawnInterval);
+
+        setInterval(() => {
+            if (!gameOver) obstacleSpeed += 0.5;
+        }, speedIncreaseInterval);
 
         requestAnimationFrame(update);
     </script>
