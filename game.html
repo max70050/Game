@@ -1,276 +1,277 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StreetRacers: Nitro Rush</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speed Dash</title>
   <style>
-    * {
+    html, body {
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-      font-family: sans-serif;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      background: #111;
       overflow: hidden;
     }
 
-    #gameArea {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 90vw;
-      max-width: 500px;
-      height: 80vh;
-      background: linear-gradient(#333, #555);
-      border: 3px solid #aaa;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    #player, .obstacle, .heart {
-      position: absolute;
-    }
-
-    #player {
-      width: 40px;
-      height: 60px;
-      background: url('https://i.imgur.com/8Q0l6Rv.png') no-repeat center/contain; /* stylisiertes Auto */
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    .obstacle {
-      width: 40px;
-      height: 40px;
-      background: url('https://i.imgur.com/BziHFaR.png') no-repeat center/contain; /* stylisierter Reifen */
-    }
-
-    .heart {
-      width: 30px;
-      height: 30px;
-      background: url('https://i.imgur.com/hbyrMeS.png') no-repeat center/contain; /* grünes Herz */
+    canvas {
+      display: block;
+      background: #555;
     }
 
     #ui {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      z-index: 10;
-      background: rgba(0,0,0,0.5);
-      padding: 10px;
-      border-radius: 8px;
-    }
-
-    #startScreen {
-      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.85);
+      padding: 10px;
+      color: white;
+      font-family: sans-serif;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 2;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      color: white;
-      z-index: 20;
+      justify-content: space-between;
     }
 
-    #startButton {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 20px;
-      background: #00cc66;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+    #lives {
+      display: inline-block;
     }
 
-    .controls {
+    #score {
+      display: inline-block;
+      text-align: center;
+      flex-grow: 1;
+    }
+
+    #highscore {
+      display: inline-block;
+    }
+
+    #touchControls {
       position: absolute;
       bottom: 20px;
       width: 100%;
       display: flex;
       justify-content: space-between;
-      padding: 0 30px;
+      padding: 0 40px;
+      z-index: 2;
     }
 
-    .controls button {
+    .controlBtn {
       width: 60px;
       height: 60px;
-      font-size: 24px;
-      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
       border: none;
-      background: #666;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .controlBtn svg {
+      width: 30px;
+      height: 30px;
+      fill: white;
+    }
+
+    #startScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 3;
+    }
+
+    #startButton {
+      padding: 20px 40px;
+      font-size: 24px;
+      border: none;
+      background: limegreen;
       color: white;
-      opacity: 0.8;
+      border-radius: 12px;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="gameArea">
-    <div id="ui">
-      <div>Leben: <span id="lives">3</span></div>
-      <div>Score: <span id="score">0</span></div>
-      <div>Highscore: <span id="highscore">0</span></div>
-    </div>
+<div id="ui">
+  <div id="lives">❤️❤️❤️</div>
+  <div id="score">Score: 0</div>
+  <div id="highscore">Highscore: 0</div>
+</div>
+<div id="startScreen">
+  <h1 style="color:white;">Speed Dash</h1>
+  <button id="startButton">Start</button>
+</div>
+<canvas id="gameCanvas"></canvas>
+<div id="touchControls">
+  <button class="controlBtn" id="leftBtn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+    </svg>
+  </button>
+  <button class="controlBtn" id="rightBtn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+    </svg>
+  </button>
+</div>
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
 
-    <div id="player"></div>
-    <div class="controls">
-      <button id="leftBtn">⬅️</button>
-      <button id="rightBtn">➡️</button>
-    </div>
+  let car = { x: width / 2 - 25, y: height - 120, width: 50, height: 80, speed: 5 };
+  let leftPressed = false;
+  let rightPressed = false;
+  let hearts = 3;
+  let score = 0;
+  let highscore = 0;
+  let obstacles = [];
+  let powerUps = [];
+  let gameSpeed = 2;
+  let running = false;
 
-    <div id="startScreen">
-      <h1>StreetRacers: Nitro Rush</h1>
-      <button id="startButton">Start</button>
-    </div>
-  </div>
+  const livesDisplay = document.getElementById("lives");
+  const scoreDisplay = document.getElementById("score");
+  const highscoreDisplay = document.getElementById("highscore");
+  const startScreen = document.getElementById("startScreen");
+  const startButton = document.getElementById("startButton");
 
-  <audio id="crashSound" src="https://freesound.org/data/previews/175/175103_2394245-lq.mp3"></audio>
+  startButton.addEventListener("click", () => {
+    startScreen.style.display = "none";
+    resetGame();
+    running = true;
+    requestAnimationFrame(update);
+  });
 
-  <script>
-    const gameArea = document.getElementById('gameArea');
-    const player = document.getElementById('player');
-    const scoreSpan = document.getElementById('score');
-    const highscoreSpan = document.getElementById('highscore');
-    const livesSpan = document.getElementById('lives');
-    const crashSound = document.getElementById('crashSound');
-    const startScreen = document.getElementById('startScreen');
+  document.getElementById("leftBtn").addEventListener("touchstart", () => leftPressed = true);
+  document.getElementById("leftBtn").addEventListener("touchend", () => leftPressed = false);
+  document.getElementById("rightBtn").addEventListener("touchstart", () => rightPressed = true);
+  document.getElementById("rightBtn").addEventListener("touchend", () => rightPressed = false);
 
-    const gameWidth = gameArea.clientWidth;
-    const gameHeight = gameArea.clientHeight;
-    let playerX = gameWidth / 2 - 20;
-    let playerSpeed = 5;
-    let score = 0;
-    let highscore = 0;
-    let lives = 3;
-    let level = 1;
-    let running = false;
+  window.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      leftPressed = true;
+    }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      rightPressed = true;
+    }
+  });
+  window.addEventListener("keyup", e => {
+    if (e.key === "ArrowLeft") leftPressed = false;
+    if (e.key === "ArrowRight") rightPressed = false;
+  });
 
-    const obstacles = [];
-    const hearts = [];
+  function resetGame() {
+    car.x = width / 2 - 25;
+    score = 0;
+    hearts = 3;
+    obstacles = [];
+    powerUps = [];
+    gameSpeed = 2;
+  }
 
-    function createObstacle() {
-      const obstacle = document.createElement('div');
-      obstacle.className = 'obstacle';
-      obstacle.style.left = Math.random() * (gameWidth - 40) + 'px';
-      obstacle.style.top = '-40px';
-      gameArea.appendChild(obstacle);
-      obstacles.push(obstacle);
+  function drawReifen(x, y) {
+    const radius = 25;
+    const innerRadius = radius * 0.3;
+    const felgeRadius = radius * 0.7;
+
+    // Äußerer schwarzer Rand
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Graue Felge
+    ctx.fillStyle = "gray";
+    ctx.beginPath();
+    ctx.arc(x, y, felgeRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Speichen
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI * 2) / 6;
+      const x1 = x + Math.cos(angle) * innerRadius;
+      const y1 = y + Math.sin(angle) * innerRadius;
+      const x2 = x + Math.cos(angle) * felgeRadius;
+      const y2 = y + Math.sin(angle) * felgeRadius;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
     }
 
-    function createHeart() {
-      const heart = document.createElement('div');
-      heart.className = 'heart';
-      heart.style.left = Math.random() * (gameWidth - 30) + 'px';
-      heart.style.top = '-30px';
-      gameArea.appendChild(heart);
-      hearts.push(heart);
+    // Innerer schwarzer Kreis
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(x, y, innerRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function spawnObstacle() {
+    const x = Math.random() * (width - 50);
+    obstacles.push({ x, y: -50 });
+  }
+
+  function update() {
+    if (!running) return;
+    ctx.clearRect(0, 0, width, height);
+
+    if (Math.random() < 0.02) spawnObstacle();
+
+    if (leftPressed) car.x -= car.speed;
+    if (rightPressed) car.x += car.speed;
+
+    car.x = Math.max(0, Math.min(car.x, width - car.width));
+
+    // Draw car
+    ctx.fillStyle = "red";
+    ctx.fillRect(car.x, car.y, car.width, car.height);
+
+    // Draw obstacles
+    for (let obs of obstacles) {
+      obs.y += gameSpeed;
+      drawReifen(obs.x + 25, obs.y + 25);
+
+      if (
+        obs.y + 50 > car.y &&
+        obs.y < car.y + car.height &&
+        obs.x + 50 > car.x &&
+        obs.x < car.x + car.width
+      ) {
+        navigator.vibrate?.(200);
+        hearts--;
+        obstacles.splice(obstacles.indexOf(obs), 1);
+      }
     }
 
-    function update() {
-      if (!running) return;
-      // Move player
-      player.style.left = playerX + 'px';
+    score++;
+    gameSpeed += 0.0005;
+    if (score > highscore) highscore = score;
 
-      // Clamp to borders
-      if (playerX < 0) playerX = 0;
-      if (playerX > gameWidth - 40) playerX = gameWidth - 40;
+    livesDisplay.textContent = "❤️".repeat(hearts);
+    scoreDisplay.textContent = `Score: ${score}`;
+    highscoreDisplay.textContent = `Highscore: ${highscore}`;
 
-      // Move obstacles
-      for (let i = 0; i < obstacles.length; i++) {
-        const o = obstacles[i];
-        o.style.top = o.offsetTop + level + 'px';
-        if (o.offsetTop > gameHeight) {
-          o.remove();
-          obstacles.splice(i, 1);
-          i--;
-          score++;
-          if (score % 10 === 0) level++;
-        } else if (checkCollision(player, o)) {
-          crashSound.play();
-          navigator.vibrate?.(100);
-          o.remove();
-          obstacles.splice(i, 1);
-          i--;
-          lives--;
-          if (lives <= 0) {
-            endGame();
-            return;
-          }
-        }
-      }
-
-      // Move hearts
-      for (let i = 0; i < hearts.length; i++) {
-        const h = hearts[i];
-        h.style.top = h.offsetTop + 2 + 'px';
-        if (h.offsetTop > gameHeight) {
-          h.remove();
-          hearts.splice(i, 1);
-          i--;
-        } else if (checkCollision(player, h)) {
-          h.remove();
-          hearts.splice(i, 1);
-          i--;
-          lives++;
-        }
-      }
-
-      scoreSpan.textContent = score;
-      livesSpan.textContent = lives;
-
+    if (hearts <= 0) {
+      running = false;
+      alert("Game Over! Dein Score: " + score);
+      startScreen.style.display = "flex";
+    } else {
       requestAnimationFrame(update);
     }
-
-    function checkCollision(a, b) {
-      const aRect = a.getBoundingClientRect();
-      const bRect = b.getBoundingClientRect();
-      return !(
-        aRect.bottom < bRect.top ||
-        aRect.top > bRect.bottom ||
-        aRect.right < bRect.left ||
-        aRect.left > bRect.right
-      );
-    }
-
-    function endGame() {
-      running = false;
-      if (score > highscore) highscore = score;
-      highscoreSpan.textContent = highscore;
-      startScreen.style.display = 'flex';
-      score = 0;
-      lives = 3;
-      level = 1;
-      [...obstacles, ...hearts].forEach(el => el.remove());
-      obstacles.length = 0;
-      hearts.length = 0;
-    }
-
-    document.getElementById('startButton').onclick = () => {
-      startScreen.style.display = 'none';
-      running = true;
-      update();
-      setInterval(createObstacle, 1000);
-      setInterval(createHeart, 5000);
-    };
-
-    document.getElementById('leftBtn').ontouchstart = () => playerX -= playerSpeed * 4;
-    document.getElementById('rightBtn').ontouchstart = () => playerX += playerSpeed * 4;
-
-    document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft') playerX -= playerSpeed;
-      if (e.key === 'ArrowRight') playerX += playerSpeed;
-    });
-  </script>
+  }
+</script>
 </body>
 </html>
