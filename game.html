@@ -20,9 +20,10 @@
 
         #score {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 24px;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 30px;
             color: white;
             font-family: Arial, sans-serif;
             font-weight: bold;
@@ -81,9 +82,9 @@
 
         let score = 0;
         let gameOver = false;
-        let obstacleSpeed = 3; // Startgeschwindigkeit
-        let spawnInterval = 1000; // Start-Hindernis-Spawn-Intervall (in ms)
-        let speedIncreaseInterval = 5000; // Alle 5 Sekunden wird das Spiel schneller
+        let obstacleSpeed = 3;
+        let spawnInterval = 1000;
+        let speedIncreaseInterval = 5000;
 
         const car = {
             x: canvas.width / 2 - 25,
@@ -95,11 +96,15 @@
             movingLeft: false,
             movingRight: false,
             draw() {
-                // Abgerundetes Auto
+                // Karosserie
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
                 ctx.roundRect(this.x, this.y, this.width, this.height, 15);
                 ctx.fill();
+
+                // Fenster
+                ctx.fillStyle = 'lightblue';
+                ctx.fillRect(this.x + 10, this.y + 20, this.width - 20, this.height - 60);
 
                 // Reifen
                 ctx.fillStyle = 'black';
@@ -107,33 +112,44 @@
                 ctx.fillRect(this.x + this.width - 15, this.y + 10, 10, 20); // Vorderreifen rechts
                 ctx.fillRect(this.x + 5, this.y + this.height - 30, 10, 20); // Hinterreifen links
                 ctx.fillRect(this.x + this.width - 15, this.y + this.height - 30, 10, 20); // Hinterreifen rechts
-
-                // Fenster
-                ctx.fillStyle = 'lightblue';
-                ctx.fillRect(this.x + 10, this.y + 20, this.width - 20, this.height - 40);
             }
         };
 
         const obstacles = [];
 
-        function drawRoundedRect(x, y, width, height, radius, color) {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.roundRect(x, y, width, height, radius);
-            ctx.fill();
+        function drawObstacle(obstacle) {
+            ctx.fillStyle = obstacle.color;
+            if (obstacle.type === 'rectangle') {
+                ctx.beginPath();
+                ctx.roundRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height, 10);
+                ctx.fill();
+            } else if (obstacle.type === 'circle') {
+                ctx.beginPath();
+                ctx.arc(
+                    obstacle.x + obstacle.width / 2,
+                    obstacle.y + obstacle.height / 2,
+                    obstacle.width / 2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
         }
 
         function createObstacle() {
-            const obsWidth = Math.random() * 100 + 50; // Zufällige Breite
+            const obsWidth = Math.random() * 50 + (Math.random() > 0.5 ? 80 : 30); // Große oder kleine Hindernisse
             const obsX = Math.random() * (canvas.width - obsWidth);
-            const colors = ['red', 'orange', 'yellow', 'green', 'purple']; // Verschiedene Farben
+            const colors = ['red', 'orange', 'yellow', 'purple', 'green'];
+            const types = ['rectangle', 'circle']; // Verschiedene Formen
             const color = colors[Math.floor(Math.random() * colors.length)];
+            const type = types[Math.floor(Math.random() * types.length)];
             obstacles.push({
                 x: obsX,
                 y: -100,
                 width: obsWidth,
-                height: 30,
-                color: color
+                height: type === 'rectangle' ? 30 : obsWidth, // Kreise sind gleich hoch und breit
+                color: color,
+                type: type
             });
         }
 
@@ -163,7 +179,7 @@
                     scoreElement.textContent = `Score: ${score}`;
                     i--;
                 } else {
-                    drawRoundedRect(obs.x, obs.y, obs.width, obs.height, 10, obs.color);
+                    drawObstacle(obs);
 
                     // Check collision
                     if (
@@ -242,11 +258,11 @@
             if (!gameOver) createObstacle();
         }, spawnInterval);
 
-        // Geschwindigkeit und Spawn-Rate erhöhen
+        // Geschwindigkeit und Hindernisgröße erhöhen
         setInterval(() => {
             if (!gameOver) {
                 obstacleSpeed += 0.5; // Hindernisse werden schneller
-                spawnInterval = Math.max(400, spawnInterval - 100); // Spawn-Intervall wird kürzer
+                spawnInterval = Math.max(500, spawnInterval - 100); // Spawn-Intervall wird kürzer
             }
         }, speedIncreaseInterval);
 
