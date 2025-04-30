@@ -1,101 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TurboRush</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rennspiel</title>
   <style>
-    * {
-      box-sizing: border-box;
+    html, body {
       margin: 0;
       padding: 0;
-    }
-    html, body {
-      height: 100%;
       overflow: hidden;
-      font-family: Arial, sans-serif;
-      background: #333;
+      background: #222;
+      font-family: sans-serif;
     }
-    #gameCanvas {
-      background: #555;
+    canvas {
       display: block;
-      margin: 0 auto;
+      background: #666;
     }
-    .hud {
+    #ui {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-size: 18px;
-      z-index: 10;
+      top: 0;
+      left: 0;
+      width: 100%;
       display: flex;
-      gap: 20px;
-    }
-    #hearts span {
-      font-size: 20px;
-      color: red;
-    }
-    .scoreboard {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
       color: white;
-      font-size: 18px;
       z-index: 10;
     }
-    .controls {
-      position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
+    #scoreboard {
       display: flex;
-      gap: 20px;
-      z-index: 10;
+      flex-direction: column;
+      align-items: flex-end;
     }
-    .control-btn {
+    #lives {
+      display: flex;
+      gap: 5px;
+    }
+    .heart {
+      width: 20px;
+      height: 20px;
+      background: red;
+      clip-path: polygon(50% 0%, 61% 13%, 75% 13%, 87% 25%, 87% 37%, 75% 50%, 50% 75%, 25% 50%, 13% 37%, 13% 25%, 25% 13%, 39% 13%);
+    }
+    .button {
+      position: absolute;
+      bottom: 20px;
       width: 60px;
       height: 60px;
+      background: rgba(0, 0, 0, 0.5);
       border-radius: 50%;
-      background: rgba(0,0,0,0.5);
-      border: 2px solid white;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
       font-size: 30px;
-      user-select: none;
-      cursor: pointer;
+      color: white;
+      z-index: 20;
     }
-    #startBtn {
+    #left { left: 20px; }
+    #right { right: 20px; }
+    #startButton {
       position: absolute;
-      top: 50%;
+      top: 100px;
       left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 20px 40px;
+      transform: translateX(-50%);
+      padding: 15px 30px;
       font-size: 24px;
       background-color: green;
       color: white;
       border: none;
-      cursor: pointer;
-      z-index: 20;
+      border-radius: 10px;
+      z-index: 30;
+    }
+    #musicButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      color: white;
+      z-index: 30;
     }
   </style>
 </head>
 <body>
+  <div id="ui">
+    <div id="lives"></div>
+    <div id="scoreboard">
+      <div id="highScore">Highscore: 0</div>
+      <div id="score">Score: 0</div>
+    </div>
+  </div>
   <canvas id="gameCanvas"></canvas>
-  <div class="hud">
-    <div id="hearts"></div>
-  </div>
-  <div class="scoreboard">
-    <div>Score: <span id="score">0</span></div>
-    <div>Highscore: <span id="highscore">0</span></div>
-  </div>
-  <div class="controls">
-    <div class="control-btn" onclick="moveLeft()">◀</div>
-    <div class="control-btn" onclick="moveRight()">▶</div>
-  </div>
-  <button id="startBtn" onclick="startGame()">Start</button>
+  <button id="startButton">Start</button>
+  <button id="musicButton">🔊</button>
+  <div id="left" class="button">⬅</div>
+  <div id="right" class="button">➡</div>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
