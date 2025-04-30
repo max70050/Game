@@ -50,13 +50,22 @@
       width: 60px;
       height: 60px;
       border: none;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 50%;
       cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #controls button svg {
+      width: 30px;
+      height: 30px;
+      fill: white;
     }
 
     #controls button:active {
-      background: rgba(200, 200, 200, 0.8);
+      background: rgba(255, 255, 255, 0.4);
     }
 
     #startScreen, #gameOverScreen {
@@ -119,8 +128,16 @@
   </div>
 
   <div id="controls">
-    <button id="leftButton">⬅️</button>
-    <button id="rightButton">➡️</button>
+    <button id="leftButton">
+      <svg viewBox="0 0 24 24">
+        <path d="M15.41 16.58L10.83 12l4.58-4.58L14 6l-6 6 6 6z"></path>
+      </svg>
+    </button>
+    <button id="rightButton">
+      <svg viewBox="0 0 24 24">
+        <path d="M8.59 16.58L13.17 12 8.59 7.42 10 6l6 6-6 6z"></path>
+      </svg>
+    </button>
   </div>
 
   <canvas id="gameCanvas"></canvas>
@@ -158,6 +175,14 @@
     leftButton.addEventListener("mouseup", () => moveLeft = false);
     rightButton.addEventListener("mousedown", () => moveRight = true);
     rightButton.addEventListener("mouseup", () => moveRight = false);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") moveLeft = true;
+      if (e.key === "ArrowRight") moveRight = true;
+    });
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "ArrowLeft") moveLeft = false;
+      if (e.key === "ArrowRight") moveRight = false;
+    });
 
     function startGame() {
       startScreen.classList.add("hidden");
@@ -197,24 +222,81 @@
 
       ctx.fillStyle = "yellow";
       ctx.fillRect(car.x + 5, car.y + car.height - 10, car.width - 10, 5);
+
+      // Scheinwerfer
+      const gradient = ctx.createLinearGradient(car.x + 10, car.y, car.x + 40, car.y - 30);
+      gradient.addColorStop(0, "rgba(255, 255, 200, 0.8)");
+      gradient.addColorStop(1, "rgba(255, 255, 200, 0.2)");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(car.x + 10, car.y);
+      ctx.lineTo(car.x + 15, car.y - 30);
+      ctx.lineTo(car.x + 35, car.y - 30);
+      ctx.lineTo(car.x + 40, car.y);
+      ctx.fill();
     }
 
     function drawObstacle(obs) {
-      ctx.fillStyle = obs.color;
+      if (obs.type === "rect") {
+        ctx.fillStyle = obs.color;
+        ctx.beginPath();
+        ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 15);
+        ctx.fill();
+      } else {
+        drawReifen(obs.x + 25, obs.y + 25);
+      }
+    }
+
+    function drawReifen(x, y) {
+      const radius = 25;
+      const innerRadius = radius * 0.3;
+      const felgeRadius = radius * 0.7;
+
+      ctx.fillStyle = "black";
       ctx.beginPath();
-      ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 15);
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "gray";
+      ctx.beginPath();
+      ctx.arc(x, y, felgeRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI * 2) / 6;
+        const x1 = x + Math.cos(angle) * innerRadius;
+        const y1 = y + Math.sin(angle) * innerRadius;
+        const x2 = x + Math.cos(angle) * felgeRadius;
+        const y2 = y + Math.sin(angle) * felgeRadius;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.arc(x, y, innerRadius, 0, Math.PI * 2);
       ctx.fill();
     }
 
     function spawnObstacle() {
+      const type = Math.random() > 0.7 ? "circle" : "rect";
       const color = Math.random() > 0.5 ? "darkgray" : "lightgray";
-      obstacles.push({
-        x: Math.random() * (canvas.width - 150),
-        y: -30,
-        width: Math.random() * 80 + 100,
-        height: 30,
-        color
-      });
+      if (type === "circle") {
+        obstacles.push({ x: Math.random() * (canvas.width - 50), y: -50, type });
+      } else {
+        obstacles.push({
+          x: Math.random() * (canvas.width - 150),
+          y: -30,
+          width: Math.random() * 80 + 100,
+          height: 30,
+          color,
+          type
+        });
+      }
     }
 
     function update() {
@@ -233,8 +315,10 @@
         obs.y += gameSpeed;
         drawObstacle(obs);
 
-        if (obs.y + obs.height > car.y && obs.y < car.y + car.height &&
-            obs.x + obs.width > car.x && obs.x < car.x + car.width) {
+        if (obs.y + (obs.type === "rect" ? obs.height : 50) > car.y &&
+            obs.y < car.y + car.height &&
+            obs.x + (obs.type === "rect" ? obs.width : 50) > car.x &&
+            obs.x < car.x + car.width) {
           obstacles.splice(index, 1);
           hearts--;
           if (hearts <= 0) {
@@ -246,7 +330,7 @@
 
         if (obs.y > canvas.height) {
           obstacles.splice(index, 1);
-          score += 20;
+          score += obs.type === "rect" ? 20 : 10;
           if (score > highscore) highscore = score;
           gameSpeed += 0.001;
         }
