@@ -19,29 +19,7 @@
     }
 
     #ui {
-  position: fixed;
-}
-    
-#controls {
-  position: absolute;
-  bottom: 20px;
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  z-index: 2;
-}
-
-#controls button {
-  padding: 20px;
-  font-size: 24px;
-  border: none;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border-radius: 50%;
-  cursor: pointer;
-}
-    #ui {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
@@ -54,22 +32,34 @@
       justify-content: space-between;
     }
 
-    #lives {
+    #lives, #score, #highscore {
       display: inline-block;
     }
 
-    #score {
-      display: inline-block;
-      text-align: center;
-      flex-grow: 1;
+    #controls {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 2;
     }
 
-    #highscore {
-      display: inline-block;
+    #controls button {
+      width: 60px;
+      height: 60px;
+      border: none;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      cursor: pointer;
     }
 
-    #startScreen,
-    #gameOverScreen {
+    #controls button:active {
+      background: rgba(200, 200, 200, 0.8);
+    }
+
+    #startScreen, #gameOverScreen {
       position: absolute;
       top: 0;
       left: 0;
@@ -83,19 +73,16 @@
       z-index: 3;
     }
 
-    #startScreen.hidden,
-    #gameOverScreen.hidden {
+    #startScreen.hidden, #gameOverScreen.hidden {
       display: none;
     }
 
-    #startScreen h1,
-    #gameOverScreen h1 {
+    #startScreen h1, #gameOverScreen h1 {
       color: white;
       margin-bottom: 20px;
     }
 
-    #startScreen button,
-    #gameOverScreen button {
+    #startScreen button, #gameOverScreen button {
       padding: 20px 40px;
       font-size: 24px;
       border: none;
@@ -105,216 +92,169 @@
       cursor: pointer;
       margin-top: 20px;
     }
+
+    #gameOverScreen .score {
+      margin-top: 10px;
+      color: white;
+      font-size: 20px;
+    }
   </style>
 </head>
 <body>
-<div id="ui">
-  <div id="lives">❤️❤️❤️</div>
-  <div id="score">Score: 0</div>
-  <div id="highscore">Highscore: 0</div>
-</div>
+  <div id="ui">
+    <div id="lives">❤️❤️❤️</div>
+    <div id="score">Score: 0</div>
+    <div id="highscore">Highscore: 0</div>
+  </div>
+
+  <div id="startScreen">
+    <h1>Speed Dash</h1>
+    <button id="startButton">Start</button>
+  </div>
+
+  <div id="gameOverScreen" class="hidden">
+    <h1>Game Over</h1>
+    <div class="score">Dein Score: 0</div>
+    <button id="restartButton">Restart</button>
+  </div>
 
   <div id="controls">
-  <button id="leftButton">⬅️</button>
-  <button id="rightButton">➡️</button>
-</div>
-  
-<div id="startScreen">
-  <h1>Speed Dash</h1>
-  <button id="startButton">Start</button>
-</div>
+    <button id="leftButton">⬅️</button>
+    <button id="rightButton">➡️</button>
+  </div>
 
-<div id="gameOverScreen" class="hidden">
-  <h1>Game Over</h1>
-  <div class="score">Dein Score: 0</div>
-  <button id="restartButton">Restart</button>
-</div>
+  <canvas id="gameCanvas"></canvas>
 
-<canvas id="gameCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-<script>
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+    const livesDisplay = document.getElementById("lives");
+    const scoreDisplay = document.getElementById("score");
+    const highscoreDisplay = document.getElementById("highscore");
+    const startScreen = document.getElementById("startScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const startButton = document.getElementById("startButton");
+    const restartButton = document.getElementById("restartButton");
+    const leftButton = document.getElementById("leftButton");
+    const rightButton = document.getElementById("rightButton");
 
-  const livesDisplay = document.getElementById("lives");
-  const scoreDisplay = document.getElementById("score");
-  const highscoreDisplay = document.getElementById("highscore");
-  const startScreen = document.getElementById("startScreen");
-  const gameOverScreen = document.getElementById("gameOverScreen");
-  const startButton = document.getElementById("startButton");
-  const restartButton = document.getElementById("restartButton");
+    let car = { x: canvas.width / 2 - 25, y: canvas.height - 120, width: 50, height: 80, speed: 5 };
+    let obstacles = [];
+    let hearts = 3;
+    let score = 0;
+    let highscore = 0;
+    let running = false;
+    let gameSpeed = 2;
+    let moveLeft = false;
+    let moveRight = false;
 
-  const leftButton = document.getElementById("leftButton");
-const rightButton = document.getElementById("rightButton");
+    startButton.addEventListener("click", startGame);
+    restartButton.addEventListener("click", restartGame);
+    leftButton.addEventListener("mousedown", () => moveLeft = true);
+    leftButton.addEventListener("mouseup", () => moveLeft = false);
+    rightButton.addEventListener("mousedown", () => moveRight = true);
+    rightButton.addEventListener("mouseup", () => moveRight = false);
 
-leftButton.addEventListener("touchstart", () => {
-  car.x -= car.speed; // Auto nach links bewegen
-});
+    function startGame() {
+      startScreen.classList.add("hidden");
+      resetGame();
+      running = true;
+      requestAnimationFrame(update);
+    }
 
-rightButton.addEventListener("touchstart", () => {
-  car.x += car.speed; // Auto nach rechts bewegen
-});
-  
-  let car = { x: canvas.width / 2 - 25, y: canvas.height - 120, width: 50, height: 80, speed: 5 };
-  let obstacles = [];
-  let hearts = 3;
-  let score = 0;
-  let highscore = 0;
-  let running = false;
-  let gameSpeed = 2;
+    function restartGame() {
+      gameOverScreen.classList.add("hidden");
+      resetGame();
+      running = true;
+      requestAnimationFrame(update);
+    }
 
-  startButton.addEventListener("click", startGame);
-  restartButton.addEventListener("click", restartGame);
+    function resetGame() {
+      car.x = canvas.width / 2 - 25;
+      obstacles = [];
+      hearts = 3;
+      score = 0;
+      gameSpeed = 2;
+      updateUI();
+    }
 
-  function startGame() {
-    startScreen.classList.add("hidden");
-    resetGame();
-    running = true;
-    requestAnimationFrame(update);
-  }
+    function updateUI() {
+      livesDisplay.textContent = "❤️".repeat(hearts);
+      scoreDisplay.textContent = `Score: ${score}`;
+      highscoreDisplay.textContent = `Highscore: ${highscore}`;
+    }
 
-  function restartGame() {
-    gameOverScreen.classList.add("hidden");
-    resetGame();
-    running = true;
-    requestAnimationFrame(update);
-  }
+    function drawCar() {
+      ctx.fillStyle = "red";
+      ctx.fillRect(car.x, car.y, car.width, car.height);
 
-  function resetGame() {
-    car.x = canvas.width / 2 - 25;
-    obstacles = [];
-    hearts = 3;
-    score = 0;
-    gameSpeed = 2;
-    updateUI();
-  }
+      ctx.fillStyle = "black";
+      ctx.fillRect(car.x + 10, car.y + 10, car.width - 20, car.height / 2);
 
-  function updateUI() {
-    livesDisplay.textContent = "❤️".repeat(hearts);
-    scoreDisplay.textContent = `Score: ${score}`;
-    highscoreDisplay.textContent = `Highscore: ${highscore}`;
-  }
+      ctx.fillStyle = "yellow";
+      ctx.fillRect(car.x + 5, car.y + car.height - 10, car.width - 10, 5);
+    }
 
-  function drawCar() {
-    // Rotes Auto mit Fenstern und Scheinwerfern
-    ctx.fillStyle = "red";
-    ctx.fillRect(car.x, car.y, car.width, car.height);
-
-    ctx.fillStyle = "black";
-    ctx.fillRect(car.x + 10, car.y + 10, car.width - 20, car.height / 2);
-
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(car.x + 5, car.y + car.height - 10, car.width - 10, 5);
-  }
-
-  function drawObstacle(obs) {
-    if (obs.type === "rect") {
+    function drawObstacle(obs) {
       ctx.fillStyle = obs.color;
-      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-    } else {
-      drawReifen(obs.x + 25, obs.y + 25);
-    }
-  }
-
-  function drawReifen(x, y) {
-    const radius = 25;
-    const innerRadius = radius * 0.3;
-    const felgeRadius = radius * 0.7;
-
-    // Äußerer schwarzer Rand
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Graue Felge
-    ctx.fillStyle = "gray";
-    ctx.beginPath();
-    ctx.arc(x, y, felgeRadius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Speichen
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1.5;
-    for (let i = 0; i < 6; i++) {
-      const angle = (i * Math.PI * 2) / 6;
-      const x1 = x + Math.cos(angle) * innerRadius;
-      const y1 = y + Math.sin(angle) * innerRadius;
-      const x2 = x + Math.cos(angle) * felgeRadius;
-      const y2 = y + Math.sin(angle) * felgeRadius;
       ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
+      ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 15);
+      ctx.fill();
     }
 
-    // Innerer schwarzer Kreis
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(x, y, innerRadius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function spawnObstacle() {
-    const type = Math.random() > 0.7 ? "circle" : "rect";
-    const color = Math.random() > 0.5 ? "darkgray" : "lightgray";
-    if (type === "circle") {
-      obstacles.push({ x: Math.random() * (canvas.width - 50), y: -50, type });
-    } else {
+    function spawnObstacle() {
+      const color = Math.random() > 0.5 ? "darkgray" : "lightgray";
       obstacles.push({
-        x: Math.random() * (canvas.width - 100),
+        x: Math.random() * (canvas.width - 150),
         y: -30,
-        width: Math.random() * 50 + gameSpeed * 10,
+        width: Math.random() * 80 + 100,
         height: 30,
-        color,
-        type
+        color
       });
     }
-  }
 
-  function update() {
-    if (!running) return;
+    function update() {
+      if (!running) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    drawCar();
+      if (moveLeft) car.x = Math.max(0, car.x - car.speed);
+      if (moveRight) car.x = Math.min(canvas.width - car.width, car.x + car.speed);
 
-    if (Math.random() < 0.02) spawnObstacle();
+      drawCar();
 
-    obstacles.forEach((obs, index) => {
-      obs.y += gameSpeed;
+      if (Math.random() < 0.015) spawnObstacle();
 
-      drawObstacle(obs);
+      obstacles.forEach((obs, index) => {
+        obs.y += gameSpeed;
+        drawObstacle(obs);
 
-      if (
-        obs.y + (obs.type === "rect" ? obs.height : 50) > car.y &&
-        obs.y < car.y + car.height &&
-        obs.x + (obs.type === "rect" ? obs.width : 50) > car.x &&
-        obs.x < car.x + car.width
-      ) {
-        obstacles.splice(index, 1);
-        hearts--;
-        if (hearts <= 0) {
-          running = false;
-          gameOverScreen.classList.remove("hidden");
-          document.querySelector(".score").textContent = `Dein Score: ${score}`;
+        if (obs.y + obs.height > car.y && obs.y < car.y + car.height &&
+            obs.x + obs.width > car.x && obs.x < car.x + car.width) {
+          obstacles.splice(index, 1);
+          hearts--;
+          if (hearts <= 0) {
+            running = false;
+            gameOverScreen.classList.remove("hidden");
+            document.querySelector(".score").textContent = `Dein Score: ${score}`;
+          }
         }
-      }
 
-      if (obs.y > canvas.height) {
-        obstacles.splice(index, 1);
-        score += obs.type === "rect" ? 20 : 10;
-        if (score > highscore) highscore = score;
-        gameSpeed += 0.001;
-      }
-    });
+        if (obs.y > canvas.height) {
+          obstacles.splice(index, 1);
+          score += 20;
+          if (score > highscore) highscore = score;
+          gameSpeed += 0.001;
+        }
+      });
 
-    updateUI();
-    requestAnimationFrame(update);
-  }
-</script>
+      updateUI();
+      requestAnimationFrame(update);
+    }
+  </script>
 </body>
 </html>
