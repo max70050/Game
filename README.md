@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Speed Dash</title>
   <style>
     html, body {
@@ -18,30 +18,18 @@
 
     #ui {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      padding: 10px;
-      color: white;
-      font-family: sans-serif;
-      background: rgba(0, 0, 0, 0.3);
-      z-index: 2;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
       display: flex;
       justify-content: space-between;
-    }
-
-    #lives {
-      display: inline-block;
-    }
-
-    #score {
-      display: inline-block;
-      text-align: center;
-      flex-grow: 1;
-    }
-
-    #highscore {
-      display: inline-block;
+      color: white;
+      font-family: sans-serif;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 8px;
+      z-index: 2;
     }
 
     #touchControls {
@@ -71,13 +59,13 @@
       fill: white;
     }
 
-    #startScreen {
+    #overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #333;
+      background: rgba(0, 0, 0, 0.85);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -85,7 +73,16 @@
       z-index: 3;
     }
 
-    #startButton {
+    #overlay.hidden {
+      display: none;
+    }
+
+    #overlay h1 {
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    #overlay button {
       padding: 20px 40px;
       font-size: 24px;
       border: none;
@@ -93,6 +90,12 @@
       color: white;
       border-radius: 12px;
       cursor: pointer;
+      margin-top: 20px;
+    }
+
+    #overlay .score {
+      color: white;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -102,9 +105,10 @@
   <div id="score">Score: 0</div>
   <div id="highscore">Highscore: 0</div>
 </div>
-<div id="startScreen">
-  <h1 style="color:white;">Speed Dash</h1>
-  <button id="startButton">Start</button>
+<div id="overlay" class="hidden">
+  <h1>Game Over</h1>
+  <div class="score">Dein Score: 0</div>
+  <button id="restartButton">Restart</button>
 </div>
 <canvas id="gameCanvas"></canvas>
 <div id="touchControls">
@@ -122,8 +126,8 @@
 <script>
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
-  let width = window.innerWidth;
-  let height = window.innerHeight;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
   canvas.width = width;
   canvas.height = height;
 
@@ -134,18 +138,17 @@
   let score = 0;
   let highscore = 0;
   let obstacles = [];
-  let powerUps = [];
   let gameSpeed = 2;
   let running = false;
 
   const livesDisplay = document.getElementById("lives");
   const scoreDisplay = document.getElementById("score");
   const highscoreDisplay = document.getElementById("highscore");
-  const startScreen = document.getElementById("startScreen");
-  const startButton = document.getElementById("startButton");
+  const overlay = document.getElementById("overlay");
+  const restartButton = document.getElementById("restartButton");
 
-  startButton.addEventListener("click", () => {
-    startScreen.style.display = "none";
+  restartButton.addEventListener("click", () => {
+    overlay.classList.add("hidden");
     resetGame();
     running = true;
     requestAnimationFrame(update);
@@ -157,15 +160,10 @@
   document.getElementById("rightBtn").addEventListener("touchend", () => rightPressed = false);
 
   window.addEventListener("keydown", e => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      leftPressed = true;
-    }
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      rightPressed = true;
-    }
+    if (e.key === "ArrowLeft") leftPressed = true;
+    if (e.key === "ArrowRight") rightPressed = true;
   });
+
   window.addEventListener("keyup", e => {
     if (e.key === "ArrowLeft") leftPressed = false;
     if (e.key === "ArrowRight") rightPressed = false;
@@ -176,8 +174,23 @@
     score = 0;
     hearts = 3;
     obstacles = [];
-    powerUps = [];
     gameSpeed = 2;
+    updateScoreUI();
+  }
+
+  function updateScoreUI() {
+    livesDisplay.textContent = "❤️".repeat(hearts);
+    scoreDisplay.textContent = `Score: ${score}`;
+    highscoreDisplay.textContent = `Highscore: ${highscore}`;
+  }
+
+  function drawCar() {
+    ctx.fillStyle = "red";
+    ctx.fillRect(car.x, car.y, car.width, car.height);
+
+    // Auto mit Fenstern
+    ctx.fillStyle = "black";
+    ctx.fillRect(car.x + 10, car.y + 10, car.width - 20, car.height / 2);
   }
 
   function drawReifen(x, y) {
@@ -199,7 +212,7 @@
 
     // Speichen
     ctx.strokeStyle = "black";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     for (let i = 0; i < 6; i++) {
       const angle = (i * Math.PI * 2) / 6;
       const x1 = x + Math.cos(angle) * innerRadius;
@@ -220,12 +233,17 @@
   }
 
   function spawnObstacle() {
-    const x = Math.random() * (width - 50);
-    obstacles.push({ x, y: -50 });
+    const type = Math.random() > 0.7 ? "circle" : "rect";
+    if (type === "circle") {
+      obstacles.push({ x: Math.random() * (width - 50), y: -50, type });
+    } else {
+      obstacles.push({ x: Math.random() * (width - 50), y: -50, width: 70, height: 30, type });
+    }
   }
 
   function update() {
     if (!running) return;
+
     ctx.clearRect(0, 0, width, height);
 
     if (Math.random() < 0.02) spawnObstacle();
@@ -234,44 +252,45 @@
     if (rightPressed) car.x += car.speed;
 
     car.x = Math.max(0, Math.min(car.x, width - car.width));
+    drawCar();
 
-    // Draw car
-    ctx.fillStyle = "red";
-    ctx.fillRect(car.x, car.y, car.width, car.height);
-
-    // Draw obstacles
-    for (let obs of obstacles) {
-      obs.y += gameSpeed;
-      drawReifen(obs.x + 25, obs.y + 25);
+    obstacles.forEach((obs, i) => {
+      if (obs.type === "circle") {
+        obs.y += gameSpeed;
+        drawReifen(obs.x + 25, obs.y + 25);
+      } else {
+        obs.y += gameSpeed;
+        ctx.fillStyle = "blue";
+        ctx.beginPath();
+        ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 10);
+        ctx.fill();
+      }
 
       if (
-        obs.y + 50 > car.y &&
+        obs.y + (obs.type === "circle" ? 50 : obs.height) > car.y &&
         obs.y < car.y + car.height &&
-        obs.x + 50 > car.x &&
+        obs.x + (obs.type === "circle" ? 50 : obs.width) > car.x &&
         obs.x < car.x + car.width
       ) {
-        navigator.vibrate?.(200);
         hearts--;
-        obstacles.splice(obstacles.indexOf(obs), 1);
+        obstacles.splice(i, 1);
+        if (hearts <= 0) {
+          running = false;
+          overlay.classList.remove("hidden");
+          overlay.querySelector(".score").textContent = `Dein Score: ${score}`;
+        }
       }
-    }
+    });
 
     score++;
-    gameSpeed += 0.0005;
     if (score > highscore) highscore = score;
 
-    livesDisplay.textContent = "❤️".repeat(hearts);
-    scoreDisplay.textContent = `Score: ${score}`;
-    highscoreDisplay.textContent = `Highscore: ${highscore}`;
-
-    if (hearts <= 0) {
-      running = false;
-      alert("Game Over! Dein Score: " + score);
-      startScreen.style.display = "flex";
-    } else {
-      requestAnimationFrame(update);
-    }
+    updateScoreUI();
+    requestAnimationFrame(update);
   }
+
+  resetGame();
+  requestAnimationFrame(update);
 </script>
 </body>
 </html>
