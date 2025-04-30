@@ -7,7 +7,7 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden; /* Deaktiviert scrollen */
+            overflow: hidden;
         }
 
         canvas {
@@ -24,7 +24,18 @@
             left: 50%;
             transform: translateX(-50%);
             font-size: 30px;
-            color: black; /* Schwarze Schrift für besseren Kontrast */
+            color: black;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        #lives {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: red; /* Lebensanzeige in Rot */
             font-family: Arial, sans-serif;
             font-weight: bold;
             z-index: 10;
@@ -43,8 +54,8 @@
         }
 
         .button {
-            width: 100px; /* Breitere Buttons */
-            height: 100px; /* Höhere Buttons */
+            width: 100px;
+            height: 100px;
             background-color: #555;
             color: white;
             font-size: 24px;
@@ -64,19 +75,20 @@
 
         .button.left {
             position: absolute;
-            left: 5%; /* Näher am Rand */
-            bottom: 5%; /* Am unteren Rand */
+            left: 5%;
+            bottom: 5%;
         }
 
         .button.right {
             position: absolute;
-            right: 5%; /* Näher am Rand */
-            bottom: 5%; /* Am unteren Rand */
+            right: 5%;
+            bottom: 5%;
         }
     </style>
 </head>
 <body>
     <div id="score">Score: 0</div>
+    <div id="lives">❤️❤️❤️</div>
     <canvas id="gameCanvas"></canvas>
     <div id="controls">
         <button class="button left" id="leftButton">←</button>
@@ -86,6 +98,7 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
@@ -93,6 +106,7 @@
         canvas.height = window.innerHeight;
 
         let score = 0;
+        let lives = 3;
         let gameOver = false;
         let obstacleSpeed = 3;
         let spawnInterval = 1000;
@@ -103,7 +117,7 @@
             y: canvas.height - 120,
             width: 50,
             height: 100,
-            color: 'blue',
+            color: '#8B0000', // Dunkelrot
             speed: 5,
             movingLeft: false,
             movingRight: false,
@@ -128,6 +142,7 @@
         };
 
         const obstacles = [];
+        const extras = []; // Liste für Extra-Leben
 
         function drawObstacle(obstacle) {
             ctx.fillStyle = obstacle.color;
@@ -136,10 +151,10 @@
                 ctx.roundRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height, 10);
                 ctx.fill();
             } else if (obstacle.type === 'circle') {
-                // Reifen mit Speichen
+                // Reifen mit Felgen
                 const centerX = obstacle.x + obstacle.width / 2;
                 const centerY = obstacle.y + obstacle.height / 2;
-                const radius = obstacle.width / 2;
+                const radius = 20; // Reifen immer gleich groß
 
                 // Reifenrand
                 ctx.fillStyle = 'black';
@@ -153,7 +168,7 @@
                 ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Speichen
+                // Felgen
                 ctx.strokeStyle = 'black';
                 ctx.lineWidth = 2;
                 for (let i = 0; i < 6; i++) {
@@ -170,21 +185,37 @@
             }
         }
 
+        function drawExtra(extra) {
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(extra.x, extra.y, 15, 0, Math.PI * 2); // Extra-Leben als roter Kreis
+            ctx.fill();
+        }
+
         function createObstacle() {
-            const obsWidth = Math.random() * 50 + (Math.random() > 0.5 ? 80 : 30); // Große oder kleine Hindernisse
+            const obsWidth = Math.random() * 50 + (Math.random() > 0.7 ? 80 : 30); // Mehr rechteckige Hindernisse
             const obsX = Math.random() * (canvas.width - obsWidth);
-            const colors = ['#555', '#777']; // Deutlichere Farben für bessere Sichtbarkeit
-            const types = ['rectangle', 'circle']; // Verschiedene Formen
+            const colors = ['#555', '#777']; // Deutlichere Farben
+            const types = Math.random() > 0.6 ? 'rectangle' : 'circle'; // Mehr Rechtecke als Kreise
             const color = colors[Math.floor(Math.random() * colors.length)];
-            const type = types[Math.floor(Math.random() * types.length)];
             obstacles.push({
                 x: obsX,
                 y: -100,
-                width: obsWidth,
-                height: type === 'rectangle' ? 30 : obsWidth, // Kreise sind gleich hoch und breit
+                width: types === 'rectangle' ? obsWidth : 40, // Reifen immer gleich groß
+                height: types === 'rectangle' ? 30 : 40,
                 color: color,
-                type: type
+                type: types
             });
+        }
+
+        function createExtra() {
+            if (Math.random() > 0.98) { // Seltene Wahrscheinlichkeit
+                const extraX = Math.random() * (canvas.width - 30);
+                extras.push({
+                    x: extraX,
+                    y: -100
+                });
+            }
         }
 
         function update() {
@@ -222,9 +253,40 @@
                         car.y < obs.y + obs.height &&
                         car.y + car.height > obs.y
                     ) {
-                        gameOver = true;
-                        alert('Game Over! Dein Score: ' + score);
-                        location.reload();
+                        obstacles.splice(i, 1); // Hindernis entfernen
+                        lives--;
+                        updateLives();
+                        if (lives <= 0) {
+                            gameOver = true;
+                            alert('Game Over! Dein Score: ' + score);
+                            location.reload();
+                        }
+                    }
+                }
+            }
+
+            // Update extras
+            for (let i = 0; i < extras.length; i++) {
+                const extra = extras[i];
+                extra.y += obstacleSpeed;
+
+                if (extra.y > canvas.height) {
+                    extras.splice(i, 1);
+                    i--;
+                } else {
+                    drawExtra(extra);
+
+                    // Check if extra is collected
+                    if (
+                        car.x < extra.x + 30 &&
+                        car.x + car.width > extra.x &&
+                        car.y < extra.y + 30 &&
+                        car.y + car.height > extra.y
+                    ) {
+                        extras.splice(i, 1); // Extra-Leben entfernen
+                        lives = Math.min(lives + 1, 3); // Maximal 3 Leben
+                        updateLives();
+                        i--;
                     }
                 }
             }
@@ -232,7 +294,11 @@
             requestAnimationFrame(update);
         }
 
-        // Deaktiviert Scrollen bei Pfeiltasten
+        function updateLives() {
+            livesElement.innerHTML = '❤️'.repeat(lives);
+        }
+
+        // Steuerung mit Tastatur
         window.addEventListener('keydown', (e) => {
             if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
                 e.preventDefault();
@@ -294,6 +360,11 @@
         setInterval(() => {
             if (!gameOver) createObstacle();
         }, spawnInterval);
+
+        // Extra-Leben erzeugen
+        setInterval(() => {
+            if (!gameOver) createExtra();
+        }, 3000);
 
         // Geschwindigkeit und Hindernisgröße erhöhen
         setInterval(() => {
