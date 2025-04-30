@@ -19,6 +19,28 @@
     }
 
     #ui {
+  position: fixed;
+}
+    
+#controls {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  z-index: 2;
+}
+
+#controls button {
+  padding: 20px;
+  font-size: 24px;
+  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+    #ui {
       position: absolute;
       top: 0;
       left: 0;
@@ -92,6 +114,11 @@
   <div id="highscore">Highscore: 0</div>
 </div>
 
+  <div id="controls">
+  <button id="leftButton">⬅️</button>
+  <button id="rightButton">➡️</button>
+</div>
+  
 <div id="startScreen">
   <h1>Speed Dash</h1>
   <button id="startButton">Start</button>
@@ -120,6 +147,17 @@
   const startButton = document.getElementById("startButton");
   const restartButton = document.getElementById("restartButton");
 
+  const leftButton = document.getElementById("leftButton");
+const rightButton = document.getElementById("rightButton");
+
+leftButton.addEventListener("touchstart", () => {
+  car.x -= car.speed; // Auto nach links bewegen
+});
+
+rightButton.addEventListener("touchstart", () => {
+  car.x += car.speed; // Auto nach rechts bewegen
+});
+  
   let car = { x: canvas.width / 2 - 25, y: canvas.height - 120, width: 50, height: 80, speed: 5 };
   let obstacles = [];
   let hearts = 3;
