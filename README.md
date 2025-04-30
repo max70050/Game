@@ -102,7 +102,7 @@
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
-        // Set canvas size dynamically
+        // Dynamische Skalierung des Spielfelds
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -143,7 +143,7 @@
         };
 
         const obstacles = [];
-        const extras = []; // Liste für Extra-Leben
+        const extras = [];
 
         function drawObstacle(obstacle) {
             ctx.fillStyle = obstacle.color;
@@ -155,21 +155,17 @@
                 // Reifen mit Felgen
                 const centerX = obstacle.x + obstacle.width / 2;
                 const centerY = obstacle.y + obstacle.height / 2;
-                const radius = 20; // Reifen immer gleich groß
-
-                // Reifenrand
+                const radius = 40; // Größere Reifen
                 ctx.fillStyle = 'black';
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Reifenmitte
                 ctx.fillStyle = 'gray';
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Felgen
                 ctx.strokeStyle = 'black';
                 ctx.lineWidth = 2;
                 for (let i = 0; i < 6; i++) {
@@ -186,37 +182,20 @@
             }
         }
 
-        function drawExtra(extra) {
-            ctx.fillStyle = 'green';
-            ctx.beginPath();
-            ctx.arc(extra.x, extra.y, 15, 0, Math.PI * 2); // Extra-Leben als grüner Kreis
-            ctx.fill();
-        }
-
         function createObstacle() {
-            const obsWidth = Math.random() * 50 + (Math.random() > 0.7 ? 80 : 30); // Mehr rechteckige Hindernisse
+            const obsWidth = Math.random() * 50 + (Math.random() > 0.7 ? 80 : 30);
             const obsX = Math.random() * (canvas.width - obsWidth);
-            const colors = ['#555', '#777']; // Deutlichere Farben
-            const types = Math.random() > 0.6 ? 'rectangle' : 'circle'; // Mehr Rechtecke als Kreise
+            const colors = ['#555', '#777'];
+            const type = Math.random() > 0.7 ? 'circle' : 'rectangle'; // Mehr Rechtecke
             const color = colors[Math.floor(Math.random() * colors.length)];
             obstacles.push({
                 x: obsX,
                 y: -100,
-                width: types === 'rectangle' ? obsWidth : 40, // Reifen immer gleich groß
-                height: types === 'rectangle' ? 30 : 40,
+                width: type === 'rectangle' ? obsWidth : 80, // Große Reifen
+                height: type === 'rectangle' ? 30 : 80, // Reifen fixieren
                 color: color,
-                type: types
+                type: type
             });
-        }
-
-        function createExtra() {
-            if (Math.random() > 0.95) { // Seltene Wahrscheinlichkeit für Extras
-                const extraX = Math.random() * (canvas.width - 30);
-                extras.push({
-                    x: extraX,
-                    y: -100
-                });
-            }
         }
 
         function update() {
@@ -224,70 +203,46 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Update car position
+            // Auto zeichnen
             if (car.movingLeft) {
                 car.x = Math.max(0, car.x - car.speed);
             }
             if (car.movingRight) {
                 car.x = Math.min(canvas.width - car.width, car.x + car.speed);
             }
-
             car.draw();
 
-            // Update obstacles
+            // Hindernisse aktualisieren
             for (let i = 0; i < obstacles.length; i++) {
                 const obs = obstacles[i];
                 obs.y += obstacleSpeed;
 
                 if (obs.y > canvas.height) {
                     obstacles.splice(i, 1);
-                    score++;
+                    if (obs.type === 'rectangle') {
+                        score += 10; // Rechtecke = 10 Punkte
+                    } else if (obs.type === 'circle') {
+                        score += 5; // Reifen = 5 Punkte
+                    }
                     scoreElement.textContent = `Score: ${score}`;
                     i--;
                 } else {
                     drawObstacle(obs);
 
-                    // Check collision
                     if (
                         car.x < obs.x + obs.width &&
                         car.x + car.width > obs.x &&
                         car.y < obs.y + obs.height &&
                         car.y + car.height > obs.y
                     ) {
-                        obstacles.splice(i, 1); // Hindernis entfernen
+                        obstacles.splice(i, 1);
                         lives--;
                         updateLives();
                         if (lives <= 0) {
                             gameOver = true;
-                            alert('Game Over! Dein Score: ' + score);
+                            alert(`Game Over! Dein Score: ${score}`);
                             location.reload();
                         }
-                    }
-                }
-            }
-
-            // Update extras
-            for (let i = 0; i < extras.length; i++) {
-                const extra = extras[i];
-                extra.y += obstacleSpeed;
-
-                if (extra.y > canvas.height) {
-                    extras.splice(i, 1);
-                    i--;
-                } else {
-                    drawExtra(extra);
-
-                    // Check if extra is collected
-                    if (
-                        car.x < extra.x + 30 &&
-                        car.x + car.width > extra.x &&
-                        car.y < extra.y + 30 &&
-                        car.y + car.height > extra.y
-                    ) {
-                        extras.splice(i, 1); // Extra-Leben entfernen
-                        lives = Math.min(lives + 1, 3); // Maximal 3 Leben
-                        updateLives();
-                        i--;
                     }
                 }
             }
@@ -299,83 +254,22 @@
             livesElement.innerHTML = '❤️'.repeat(lives);
         }
 
-        // Steuerung mit Tastatur
+        // Steuerung
         window.addEventListener('keydown', (e) => {
-            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-                e.preventDefault();
-            }
-            if (e.key === 'ArrowLeft') {
-                car.movingLeft = true;
-            } else if (e.key === 'ArrowRight') {
-                car.movingRight = true;
-            }
+            if (e.key === 'ArrowLeft') car.movingLeft = true;
+            if (e.key === 'ArrowRight') car.movingRight = true;
         });
 
         window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowLeft') {
-                car.movingLeft = false;
-            } else if (e.key === 'ArrowRight') {
-                car.movingRight = false;
-            }
+            if (e.key === 'ArrowLeft') car.movingLeft = false;
+            if (e.key === 'ArrowRight') car.movingRight = false;
         });
 
-        // Steuerung mit Buttons
-        leftButton.addEventListener('mousedown', () => {
-            car.movingLeft = true;
-        });
-
-        leftButton.addEventListener('mouseup', () => {
-            car.movingLeft = false;
-        });
-
-        rightButton.addEventListener('mousedown', () => {
-            car.movingRight = true;
-        });
-
-        rightButton.addEventListener('mouseup', () => {
-            car.movingRight = false;
-        });
-
-        // Touch-Unterstützung für Buttons
-        leftButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            car.movingLeft = true;
-        });
-
-        leftButton.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            car.movingLeft = false;
-        });
-
-        rightButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            car.movingRight = true;
-        });
-
-        rightButton.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            car.movingRight = false;
-        });
-
-        // Hindernisse erzeugen
         setInterval(() => {
             if (!gameOver) createObstacle();
         }, spawnInterval);
 
-        // Extra-Leben erzeugen
-        setInterval(() => {
-            if (!gameOver) createExtra();
-        }, 3000);
-
-        // Geschwindigkeit und Hindernisgröße erhöhen
-        setInterval(() => {
-            if (!gameOver) {
-                obstacleSpeed += 0.5; // Hindernisse werden schneller
-                spawnInterval = Math.max(500, spawnInterval - 100); // Spawn-Intervall wird kürzer
-            }
-        }, speedIncreaseInterval);
-
-        update();
+        requestAnimationFrame(update);
     </script>
 </body>
 </html>
