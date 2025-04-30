@@ -7,7 +7,7 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* Verhindert Scrollen */
         }
 
         canvas {
@@ -20,7 +20,7 @@
 
         #score {
             position: absolute;
-            top: 20px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 20px;
@@ -32,9 +32,9 @@
 
         #highscore {
             position: absolute;
-            top: 20px;
+            top: 10px;
             right: 20px;
-            font-size: 20px;
+            font-size: 18px;
             color: black;
             font-family: Arial, sans-serif;
             font-weight: bold;
@@ -43,9 +43,9 @@
 
         #lives {
             position: absolute;
-            top: 20px;
+            top: 10px;
             left: 20px;
-            font-size: 20px;
+            font-size: 18px;
             color: red;
             font-family: Arial, sans-serif;
             font-weight: bold;
@@ -69,7 +69,7 @@
             height: 80px;
             background-color: #555;
             color: white;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             border: none;
             border-radius: 10px;
@@ -115,7 +115,7 @@
         const leftButton = document.getElementById('leftButton');
         const rightButton = document.getElementById('rightButton');
 
-        // Dynamische Skalierung des Spielfelds
+        // Set canvas dimensions
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -125,7 +125,6 @@
         let gameOver = false;
         let obstacleSpeed = 3;
         let spawnInterval = 1000;
-        let speedIncreaseInterval = 5000;
 
         highscoreElement.textContent = `Highscore: ${highscore}`;
 
@@ -139,22 +138,22 @@
             movingLeft: false,
             movingRight: false,
             draw() {
-                // Karosserie
+                // Draw car body
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
                 ctx.roundRect(this.x, this.y, this.width, this.height, 15);
                 ctx.fill();
 
-                // Fenster
+                // Draw car windows
                 ctx.fillStyle = 'lightblue';
                 ctx.fillRect(this.x + 10, this.y + 20, this.width - 20, this.height - 60);
 
-                // Reifen
+                // Draw car tires
                 ctx.fillStyle = 'black';
-                ctx.fillRect(this.x + 5, this.y + 10, 10, 20); // Vorderreifen links
-                ctx.fillRect(this.x + this.width - 15, this.y + 10, 10, 20); // Vorderreifen rechts
-                ctx.fillRect(this.x + 5, this.y + this.height - 30, 10, 20); // Hinterreifen links
-                ctx.fillRect(this.x + this.width - 15, this.y + this.height - 30, 10, 20); // Hinterreifen rechts
+                ctx.fillRect(this.x + 5, this.y + 10, 10, 20); // Front left
+                ctx.fillRect(this.x + this.width - 15, this.y + 10, 10, 20); // Front right
+                ctx.fillRect(this.x + 5, this.y + this.height - 30, 10, 20); // Back left
+                ctx.fillRect(this.x + this.width - 15, this.y + this.height - 30, 10, 20); // Back right
             }
         };
 
@@ -170,40 +169,47 @@
                 // Reifen mit Felgen
                 const centerX = obstacle.x + obstacle.width / 2;
                 const centerY = obstacle.y + obstacle.height / 2;
-                const radius = 35; // Mittlere Reifen
+                const radius = 40; // Reifenradius
+                const innerRadius = radius * 0.3; // Innerer schwarzer Kreis
+                const felgeRadius = radius * 0.7; // Bereich für graue Felge
+
+                // Äußerer schwarzer Reifenrand
                 ctx.fillStyle = 'black';
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
                 ctx.fill();
 
+                // Graue Felge
                 ctx.fillStyle = 'gray';
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, felgeRadius, 0, Math.PI * 2);
                 ctx.fill();
 
+                // Felgenstriche
                 ctx.strokeStyle = 'black';
                 ctx.lineWidth = 2;
                 for (let i = 0; i < 6; i++) {
                     const angle = (i * Math.PI * 2) / 6;
-                    const x1 = centerX + Math.cos(angle) * radius * 0.7;
-                    const y1 = centerY + Math.sin(angle) * radius * 0.7;
-                    const x2 = centerX + Math.cos(angle) * radius;
-                    const y2 = centerY + Math.sin(angle) * radius;
+                    const x1 = centerX + Math.cos(angle) * innerRadius;
+                    const y1 = centerY + Math.sin(angle) * innerRadius;
+                    const x2 = centerX + Math.cos(angle) * felgeRadius;
+                    const y2 = centerY + Math.sin(angle) * felgeRadius;
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                 }
 
+                // Innerer schwarzer Kreis
                 ctx.fillStyle = 'black';
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, radius * 0.3, 0, Math.PI * 2); // Innerer schwarzer Kreis
+                ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
         function createObstacle() {
-            const obsWidth = Math.random() * 50 + 80; // Rechtecke sind größer
+            const obsWidth = Math.random() * 50 + 80; // Größe der Rechtecke
             const obsX = Math.random() * (canvas.width - obsWidth);
             const colors = ['#555', '#777'];
             const type = Math.random() > 0.7 ? 'circle' : 'rectangle'; // Mehr Rechtecke
@@ -211,8 +217,8 @@
             obstacles.push({
                 x: obsX,
                 y: -100,
-                width: type === 'rectangle' ? obsWidth : 70, // Reifen mittlere Größe
-                height: type === 'rectangle' ? 30 : 70, // Reifen fixieren
+                width: type === 'rectangle' ? obsWidth : 80,
+                height: type === 'rectangle' ? 30 : 80,
                 color: color,
                 type: type
             });
@@ -223,7 +229,7 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Auto zeichnen
+            // Update car position
             if (car.movingLeft) {
                 car.x = Math.max(0, car.x - car.speed);
             }
@@ -232,18 +238,14 @@
             }
             car.draw();
 
-            // Hindernisse aktualisieren
+            // Update obstacles
             for (let i = 0; i < obstacles.length; i++) {
                 const obs = obstacles[i];
                 obs.y += obstacleSpeed;
 
                 if (obs.y > canvas.height) {
                     obstacles.splice(i, 1);
-                    if (obs.type === 'rectangle') {
-                        score += 10; // Rechtecke = 10 Punkte
-                    } else if (obs.type === 'circle') {
-                        score += 5; // Reifen = 5 Punkte
-                    }
+                    score += obs.type === 'rectangle' ? 10 : 5;
                     scoreElement.textContent = `Score: ${score}`;
                     if (score > highscore) {
                         highscore = score;
@@ -281,6 +283,9 @@
 
         // Steuerung
         window.addEventListener('keydown', (e) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                e.preventDefault();
+            }
             if (e.key === 'ArrowLeft') car.movingLeft = true;
             if (e.key === 'ArrowRight') car.movingRight = true;
         });
@@ -301,7 +306,7 @@
 
         setInterval(() => {
             if (!gameOver) obstacleSpeed += 0.5;
-        }, speedIncreaseInterval);
+        }, 4000); // Schneller schwieriger
 
         requestAnimationFrame(update);
     </script>
