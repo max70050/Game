@@ -28,11 +28,14 @@
 
         #controls {
             position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
-            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
         }
 
         .button {
@@ -47,6 +50,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            pointer-events: auto;
             cursor: pointer;
         }
 
@@ -81,7 +85,9 @@
             width: 50,
             height: 100,
             color: 'blue',
-            speed: 5
+            speed: 5,
+            movingLeft: false,
+            movingRight: false
         };
 
         const obstacles = [];
@@ -109,7 +115,14 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Update car
+            // Update car position
+            if (car.movingLeft) {
+                car.x = Math.max(0, car.x - car.speed);
+            }
+            if (car.movingRight) {
+                car.x = Math.min(canvas.width - car.width, car.x + car.speed);
+            }
+
             drawRect(car.x, car.y, car.width, car.height, car.color);
 
             // Update obstacles
@@ -142,33 +155,59 @@
             requestAnimationFrame(update);
         }
 
-        // Steuerung für Tasten
+        // Steuerung mit Tastatur
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') {
-                car.x = Math.max(0, car.x - car.speed);
+                car.movingLeft = true;
             } else if (e.key === 'ArrowRight') {
-                car.x = Math.min(canvas.width - car.width, car.x + car.speed);
+                car.movingRight = true;
             }
         });
 
-        // Steuerung für Buttons
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') {
+                car.movingLeft = false;
+            } else if (e.key === 'ArrowRight') {
+                car.movingRight = false;
+            }
+        });
+
+        // Steuerung mit Buttons
         leftButton.addEventListener('mousedown', () => {
-            car.x = Math.max(0, car.x - car.speed);
+            car.movingLeft = true;
+        });
+
+        leftButton.addEventListener('mouseup', () => {
+            car.movingLeft = false;
         });
 
         rightButton.addEventListener('mousedown', () => {
-            car.x = Math.min(canvas.width - car.width, car.x + car.speed);
+            car.movingRight = true;
+        });
+
+        rightButton.addEventListener('mouseup', () => {
+            car.movingRight = false;
         });
 
         // Touch-Unterstützung für Buttons
         leftButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            car.x = Math.max(0, car.x - car.speed);
+            car.movingLeft = true;
+        });
+
+        leftButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            car.movingLeft = false;
         });
 
         rightButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            car.x = Math.min(canvas.width - car.width, car.x + car.speed);
+            car.movingRight = true;
+        });
+
+        rightButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            car.movingRight = false;
         });
 
         // Hindernisse erzeugen
