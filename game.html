@@ -7,7 +7,7 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* Deaktiviert scrollen */
         }
 
         canvas {
@@ -24,7 +24,7 @@
             left: 50%;
             transform: translateX(-50%);
             font-size: 30px;
-            color: white;
+            color: black; /* Schwarze Schrift für besseren Kontrast */
             font-family: Arial, sans-serif;
             font-weight: bold;
             z-index: 10;
@@ -43,8 +43,8 @@
         }
 
         .button {
-            width: 80px;
-            height: 80px;
+            width: 100px; /* Breitere Buttons */
+            height: 100px; /* Höhere Buttons */
             background-color: #555;
             color: white;
             font-size: 24px;
@@ -61,14 +61,26 @@
         .button:active {
             background-color: #777;
         }
+
+        .button.left {
+            position: absolute;
+            left: 5%; /* Näher am Rand */
+            bottom: 5%; /* Am unteren Rand */
+        }
+
+        .button.right {
+            position: absolute;
+            right: 5%; /* Näher am Rand */
+            bottom: 5%; /* Am unteren Rand */
+        }
     </style>
 </head>
 <body>
     <div id="score">Score: 0</div>
     <canvas id="gameCanvas"></canvas>
     <div id="controls">
-        <button class="button" id="leftButton">←</button>
-        <button class="button" id="rightButton">→</button>
+        <button class="button left" id="leftButton">←</button>
+        <button class="button right" id="rightButton">→</button>
     </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -124,22 +136,44 @@
                 ctx.roundRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height, 10);
                 ctx.fill();
             } else if (obstacle.type === 'circle') {
+                // Reifen mit Speichen
+                const centerX = obstacle.x + obstacle.width / 2;
+                const centerY = obstacle.y + obstacle.height / 2;
+                const radius = obstacle.width / 2;
+
+                // Reifenrand
+                ctx.fillStyle = 'black';
                 ctx.beginPath();
-                ctx.arc(
-                    obstacle.x + obstacle.width / 2,
-                    obstacle.y + obstacle.height / 2,
-                    obstacle.width / 2,
-                    0,
-                    Math.PI * 2
-                );
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
                 ctx.fill();
+
+                // Reifenmitte
+                ctx.fillStyle = 'gray';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Speichen
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i * Math.PI * 2) / 6;
+                    const x1 = centerX + Math.cos(angle) * radius * 0.6;
+                    const y1 = centerY + Math.sin(angle) * radius * 0.6;
+                    const x2 = centerX + Math.cos(angle) * radius;
+                    const y2 = centerY + Math.sin(angle) * radius;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
             }
         }
 
         function createObstacle() {
             const obsWidth = Math.random() * 50 + (Math.random() > 0.5 ? 80 : 30); // Große oder kleine Hindernisse
             const obsX = Math.random() * (canvas.width - obsWidth);
-            const colors = ['red', 'orange', 'yellow', 'purple', 'green'];
+            const colors = ['#555', '#777']; // Deutlichere Farben für bessere Sichtbarkeit
             const types = ['rectangle', 'circle']; // Verschiedene Formen
             const color = colors[Math.floor(Math.random() * colors.length)];
             const type = types[Math.floor(Math.random() * types.length)];
@@ -198,8 +232,11 @@
             requestAnimationFrame(update);
         }
 
-        // Steuerung mit Tastatur
+        // Deaktiviert Scrollen bei Pfeiltasten
         window.addEventListener('keydown', (e) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                e.preventDefault();
+            }
             if (e.key === 'ArrowLeft') {
                 car.movingLeft = true;
             } else if (e.key === 'ArrowRight') {
