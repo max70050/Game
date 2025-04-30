@@ -175,6 +175,13 @@
     leftButton.addEventListener("mouseup", () => moveLeft = false);
     rightButton.addEventListener("mousedown", () => moveRight = true);
     rightButton.addEventListener("mouseup", () => moveRight = false);
+
+    // Touch events for iPad
+    leftButton.addEventListener("touchstart", () => moveLeft = true);
+    leftButton.addEventListener("touchend", () => moveLeft = false);
+    rightButton.addEventListener("touchstart", () => moveRight = true);
+    rightButton.addEventListener("touchend", () => moveRight = false);
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft") moveLeft = true;
       if (e.key === "ArrowRight") moveRight = true;
@@ -220,83 +227,50 @@
       ctx.fillStyle = "black";
       ctx.fillRect(car.x + 10, car.y + 10, car.width - 20, car.height / 2);
 
-      ctx.fillStyle = "yellow";
-      ctx.fillRect(car.x + 5, car.y + car.height - 10, car.width - 10, 5);
+      // Two separate headlights
+      drawHeadlight(car.x + 5, car.y, -30);
+      drawHeadlight(car.x + car.width - 5, car.y, 30);
+    }
 
-      // Scheinwerfer
-      const gradient = ctx.createLinearGradient(car.x + 10, car.y, car.x + 40, car.y - 30);
+    function drawHeadlight(x, y, angle) {
+      const gradient = ctx.createLinearGradient(x, y, x + angle, y - 50);
       gradient.addColorStop(0, "rgba(255, 255, 200, 0.8)");
       gradient.addColorStop(1, "rgba(255, 255, 200, 0.2)");
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.moveTo(car.x + 10, car.y);
-      ctx.lineTo(car.x + 15, car.y - 30);
-      ctx.lineTo(car.x + 35, car.y - 30);
-      ctx.lineTo(car.x + 40, car.y);
-      ctx.fill();
-    }
-
-    function drawObstacle(obs) {
-      if (obs.type === "rect") {
-        ctx.fillStyle = obs.color;
-        ctx.beginPath();
-        ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 15);
-        ctx.fill();
-      } else {
-        drawReifen(obs.x + 25, obs.y + 25);
-      }
-    }
-
-    function drawReifen(x, y) {
-      const radius = 25;
-      const innerRadius = radius * 0.3;
-      const felgeRadius = radius * 0.7;
-
-      ctx.fillStyle = "black";
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "gray";
-      ctx.beginPath();
-      ctx.arc(x, y, felgeRadius, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.strokeStyle = "black";
-      ctx.lineWidth = 1.5;
-      for (let i = 0; i < 6; i++) {
-        const angle = (i * Math.PI * 2) / 6;
-        const x1 = x + Math.cos(angle) * innerRadius;
-        const y1 = y + Math.sin(angle) * innerRadius;
-        const x2 = x + Math.cos(angle) * felgeRadius;
-        const y2 = y + Math.sin(angle) * felgeRadius;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      }
-
-      ctx.fillStyle = "black";
-      ctx.beginPath();
-      ctx.arc(x, y, innerRadius, 0, Math.PI * 2);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + angle, y - 50);
+      ctx.lineTo(x - angle, y - 50);
+      ctx.closePath();
       ctx.fill();
     }
 
     function spawnObstacle() {
-      const type = Math.random() > 0.7 ? "circle" : "rect";
+      const type = Math.random() > 0.8 ? "circle" : "rect"; // Fewer tires
       const color = Math.random() > 0.5 ? "darkgray" : "lightgray";
-      if (type === "circle") {
-        obstacles.push({ x: Math.random() * (canvas.width - 50), y: -50, type });
-      } else {
-        obstacles.push({
-          x: Math.random() * (canvas.width - 150),
-          y: -30,
-          width: Math.random() * 80 + 100,
+      let newObstacle;
+
+      do {
+        newObstacle = {
+          x: Math.random() * (canvas.width - 100),
+          y: -50,
+          width: Math.random() * 80 + 50,
           height: 30,
           color,
-          type
-        });
-      }
+          type,
+        };
+      } while (obstacles.some(obs => isColliding(obs, newObstacle)));
+
+      obstacles.push(newObstacle);
+    }
+
+    function isColliding(a, b) {
+      return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+      );
     }
 
     function update() {
@@ -314,19 +288,6 @@
       obstacles.forEach((obs, index) => {
         obs.y += gameSpeed;
         drawObstacle(obs);
-
-        if (obs.y + (obs.type === "rect" ? obs.height : 50) > car.y &&
-            obs.y < car.y + car.height &&
-            obs.x + (obs.type === "rect" ? obs.width : 50) > car.x &&
-            obs.x < car.x + car.width) {
-          obstacles.splice(index, 1);
-          hearts--;
-          if (hearts <= 0) {
-            running = false;
-            gameOverScreen.classList.remove("hidden");
-            document.querySelector(".score").textContent = `Dein Score: ${score}`;
-          }
-        }
 
         if (obs.y > canvas.height) {
           obstacles.splice(index, 1);
