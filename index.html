@@ -83,24 +83,6 @@
       cursor: pointer;
       margin-top: 20px;
     }
-
-    .controlBtn {
-      width: 80px;
-      height: 80px;
-      background: rgba(0, 0, 0, 0.5);
-      border: none;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 10px;
-    }
-
-    .controlBtn svg {
-      width: 40px;
-      height: 40px;
-      fill: white;
-    }
   </style>
 </head>
 <body>
@@ -144,6 +126,7 @@
   let score = 0;
   let highscore = 0;
   let running = false;
+  let gameSpeed = 2;
 
   startButton.addEventListener("click", startGame);
   restartButton.addEventListener("click", restartGame);
@@ -167,6 +150,7 @@
     obstacles = [];
     hearts = 3;
     score = 0;
+    gameSpeed = 2;
     updateUI();
   }
 
@@ -177,28 +161,79 @@
   }
 
   function drawCar() {
+    // Rotes Auto mit Fenstern und Scheinwerfern
     ctx.fillStyle = "red";
     ctx.fillRect(car.x, car.y, car.width, car.height);
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(car.x + 10, car.y + 10, car.width - 20, car.height / 2);
+
+    ctx.fillStyle = "yellow";
+    ctx.fillRect(car.x + 5, car.y + car.height - 10, car.width - 10, 5);
   }
 
-  function drawObstacle(x, y, width, height, type) {
-    if (type === "rect") {
-      ctx.fillStyle = "blue";
-      ctx.fillRect(x, y, width, height);
-    } else if (type === "circle") {
-      ctx.fillStyle = "black";
-      ctx.beginPath();
-      ctx.arc(x, y, 25, 0, Math.PI * 2);
-      ctx.fill();
+  function drawObstacle(obs) {
+    if (obs.type === "rect") {
+      ctx.fillStyle = obs.color;
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+    } else {
+      drawReifen(obs.x + 25, obs.y + 25);
     }
+  }
+
+  function drawReifen(x, y) {
+    const radius = 25;
+    const innerRadius = radius * 0.3;
+    const felgeRadius = radius * 0.7;
+
+    // Äußerer schwarzer Rand
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Graue Felge
+    ctx.fillStyle = "gray";
+    ctx.beginPath();
+    ctx.arc(x, y, felgeRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Speichen
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI * 2) / 6;
+      const x1 = x + Math.cos(angle) * innerRadius;
+      const y1 = y + Math.sin(angle) * innerRadius;
+      const x2 = x + Math.cos(angle) * felgeRadius;
+      const y2 = y + Math.sin(angle) * felgeRadius;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    // Innerer schwarzer Kreis
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(x, y, innerRadius, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   function spawnObstacle() {
     const type = Math.random() > 0.7 ? "circle" : "rect";
+    const color = Math.random() > 0.5 ? "darkgray" : "lightgray";
     if (type === "circle") {
       obstacles.push({ x: Math.random() * (canvas.width - 50), y: -50, type });
     } else {
-      obstacles.push({ x: Math.random() * (canvas.width - 70), y: -30, width: 70, height: 30, type });
+      obstacles.push({
+        x: Math.random() * (canvas.width - 100),
+        y: -30,
+        width: Math.random() * 50 + gameSpeed * 10,
+        height: 30,
+        color,
+        type
+      });
     }
   }
 
@@ -212,22 +247,34 @@
     if (Math.random() < 0.02) spawnObstacle();
 
     obstacles.forEach((obs, index) => {
-      obs.y += 2;
+      obs.y += gameSpeed;
 
-      if (obs.type === "rect") {
-        drawObstacle(obs.x, obs.y, obs.width, obs.height, obs.type);
-      } else {
-        drawObstacle(obs.x + 25, obs.y + 25, 0, 0, obs.type);
+      drawObstacle(obs);
+
+      if (
+        obs.y + (obs.type === "rect" ? obs.height : 50) > car.y &&
+        obs.y < car.y + car.height &&
+        obs.x + (obs.type === "rect" ? obs.width : 50) > car.x &&
+        obs.x < car.x + car.width
+      ) {
+        obstacles.splice(index, 1);
+        hearts--;
+        if (hearts <= 0) {
+          running = false;
+          gameOverScreen.classList.remove("hidden");
+          document.querySelector(".score").textContent = `Dein Score: ${score}`;
+        }
       }
 
       if (obs.y > canvas.height) {
         obstacles.splice(index, 1);
-        score++;
+        score += obs.type === "rect" ? 20 : 10;
         if (score > highscore) highscore = score;
-        updateUI();
+        gameSpeed += 0.001;
       }
     });
 
+    updateUI();
     requestAnimationFrame(update);
   }
 </script>
