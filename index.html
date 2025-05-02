@@ -38,6 +38,24 @@ html, body {
       display: inline-block;
     }
 
+    #pauseButton {
+    background-color: #4CAF50; /* Gleiche Farbe wie andere Buttons */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px; /* Abgerundete Ecken */
+}
+
+#pauseButton:hover {
+    background-color: #45a049; /* Hover-Effekt */
+}
+
         #highscore {
       display: inline-block;
       transform: translateX(-35px); /* Highscore-Anzeige um 30px nach links verschieben */
@@ -145,6 +163,13 @@ html, body {
         <path d="M15.41 16.58L10.83 12l4.58-4.58L14 6l-6 6 6 6z"></path>
       </svg>
     </button>
+
+      <button id="pauseButton">
+    <svg viewBox="0 0 24 24">
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path> <!-- Symbol für Pause -->
+    </svg>
+  </button>
+    
     <button id="rightButton">
       <svg viewBox="0 0 24 24">
         <path d="M8.59 16.58L13.17 12 8.59 7.42 10 6l6 6-6 6z"></path>
@@ -285,6 +310,31 @@ html, body {
       ctx.closePath();
       ctx.fill();
     }
+
+    let isPaused = false;
+
+document.getElementById("pauseButton").addEventListener("click", function () {
+    isPaused = !isPaused;
+    if (isPaused) {
+        pauseGame();
+        this.textContent = "Resume"; // Text des Buttons ändern
+    } else {
+        resumeGame();
+        this.textContent = "Pause"; // Text des Buttons zurücksetzen
+    }
+});
+
+function pauseGame() {
+    // Hier fügst du den Code ein, der das Spiel pausiert
+    console.log("Spiel pausiert"); // Debugging
+    // Beispiel: Animationen stoppen, Timer pausieren, etc.
+}
+
+function resumeGame() {
+    // Hier fügst du den Code ein, der das Spiel fortsetzt
+    console.log("Spiel fortgesetzt"); // Debugging
+    // Beispiel: Animationen wieder starten, Timer fortsetzen, etc.
+}
 
     function spawnObstacle() {
       const type = Math.random() > 0.8 ? "circle" : "rect"; // Fewer tires
