@@ -231,6 +231,35 @@ html, body {
       if (e.key === "ArrowRight") moveRight = false;
     });
 
+    // Element für die Anzeige der Geschwindigkeit hinzufügen
+const speedDisplay = document.createElement('div');
+speedDisplay.id = 'speed';
+speedDisplay.style.position = 'fixed';
+speedDisplay.style.top = '50px';
+speedDisplay.style.left = '10px';
+speedDisplay.style.color = 'white';
+speedDisplay.style.fontFamily = 'sans-serif';
+speedDisplay.style.fontSize = '20px';
+document.body.appendChild(speedDisplay);
+
+// Initiale Geschwindigkeit
+let gameSpeed = 2; 
+speedDisplay.textContent = `Geschwindigkeit: ${gameSpeed.toFixed(1)}`;
+
+// Intervall für die Erhöhung der Geschwindigkeit
+const speedIncreaseInterval = 5000; // Erhöhung alle 5 Sekunden
+const speedIncrement = 0.5; // Geschwindigkeitserhöhung
+
+// Funktion zur Erhöhung der Geschwindigkeit
+function increaseGameSpeed() {
+    gameSpeed += speedIncrement;
+    speedDisplay.textContent = `Geschwindigkeit: ${gameSpeed.toFixed(1)}`;
+}
+
+// Starte das Intervall zur Erhöhung der Geschwindigkeit
+setInterval(increaseGameSpeed, speedIncreaseInterval);
+
+
     function startGame() {
       startScreen.classList.add("hidden");
       resetGame();
@@ -344,6 +373,7 @@ html, body {
             gameOverScreen.classList.remove("hidden");
             document.querySelector(".score").textContent = `Dein Score: ${score}`;
           }
+          
         }
 
         if (obs.y > canvas.height) {
