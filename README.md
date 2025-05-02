@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Speed Dash</title>
+  
   <style>
-    html, body {
+    
+html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
@@ -107,9 +110,8 @@
       color: white;
       font-size: 20px;
     }
+   
   </style>
-
-    
 </head>
 <body>
   <div id="ui">
@@ -175,39 +177,63 @@
     startButton.addEventListener("click", startGame);
     restartButton.addEventListener("click", restartGame);
 
-    leftButton.addEventListener("mousedown", () => moveLeft = true);
-    leftButton.addEventListener("mouseup", () => moveLeft = false);
-    rightButton.addEventListener("mousedown", () => moveRight = true);
-    rightButton.addEventListener("mouseup", () => moveRight = false);
+    leftButton.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      moveLeft = true;
+    });
+    leftButton.addEventListener("mouseup", (e) => {
+      e.preventDefault();
+      moveLeft = false;
+    });
+    rightButton.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      moveRight = true;
+    });
+    rightButton.addEventListener("mouseup", (e) => {
+      e.preventDefault();
+      moveRight = false;
+    });
 
-    leftButton.addEventListener("touchstart", () => moveLeft = true);
-    leftButton.addEventListener("touchend", () => moveLeft = false);
-    rightButton.addEventListener("touchstart", () => moveRight = true);
-    rightButton.addEventListener("touchend", () => moveRight = false);
+    leftButton.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      moveLeft = true;
+    });
+    leftButton.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      moveLeft = false;
+    });
+    rightButton.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      moveRight = true;
+    });
+    rightButton.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      moveRight = false;
+    });
 
     document.addEventListener("keydown", (e) => {
+      e.preventDefault(); // Verhindert Standardaktionen wie Scrollen
       if (e.key === "ArrowLeft") moveLeft = true;
       if (e.key === "ArrowRight") moveRight = true;
     });
     document.addEventListener("keyup", (e) => {
+      e.preventDefault(); // Verhindert Standardaktionen wie Scrollen
       if (e.key === "ArrowLeft") moveLeft = false;
       if (e.key === "ArrowRight") moveRight = false;
     });
 
     function startGame() {
-      // Start Screen ausblenden, Spiel starten
       startScreen.classList.add("hidden");
       resetGame();
-      running = true; // Flag setzen
-      requestAnimationFrame(update); // Spielschleife starten
+      running = true;
+      requestAnimationFrame(update);
     }
 
     function restartGame() {
-      // Game Over Screen ausblenden, Spiel neu starten
       gameOverScreen.classList.add("hidden");
       resetGame();
-      running = true; // Flag setzen
-      requestAnimationFrame(update); // Spielschleife starten
+      running = true;
+      requestAnimationFrame(update);
     }
 
     function resetGame() {
@@ -232,7 +258,6 @@
       ctx.fillStyle = "black";
       ctx.fillRect(car.x + 10, car.y + 10, car.width - 20, car.height / 2);
 
-      // Two separate headlights
       drawHeadlight(car.x + 5, car.y, -30);
       drawHeadlight(car.x + car.width - 5, car.y, 30);
     }
@@ -279,7 +304,7 @@
     }
 
     function update() {
-      if (!running) return; // Beende Schleife, wenn Spiel nicht läuft
+      if (!running) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -293,6 +318,22 @@
       obstacles.forEach((obs, index) => {
         obs.y += gameSpeed;
         drawObstacle(obs);
+
+        // Kollisionserkennung
+        if (
+          obs.y + obs.height > car.y &&
+          obs.y < car.y + car.height &&
+          obs.x + obs.width > car.x &&
+          obs.x < car.x + car.width
+        ) {
+          obstacles.splice(index, 1);
+          hearts--; // Leben abziehen
+          if (hearts <= 0) {
+            running = false;
+            gameOverScreen.classList.remove("hidden");
+            document.querySelector(".score").textContent = `Dein Score: ${score}`;
+          }
+        }
 
         if (obs.y > canvas.height) {
           obstacles.splice(index, 1);
