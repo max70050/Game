@@ -40,7 +40,7 @@ html, body {
 
         #highscore {
       display: inline-block;
-      transform: translateX(-30px); /* Highscore-Anzeige um 30px nach links verschieben */
+      transform: translateX(-35px); /* Highscore-Anzeige um 30px nach links verschieben */
     }
 
     #controls {
@@ -177,7 +177,7 @@ html, body {
     let score = 0;
     let highscore = 0;
     let running = false;
-    let gameSpeed = 100;
+    let gameSpeed = 2;
     let moveLeft = false;
     let moveRight = false;
 
@@ -352,7 +352,7 @@ html, body {
           obstacles.splice(index, 1);
           score += obs.type === "rect" ? 20 : 10;
           if (score > highscore) highscore = score;
-          gameSpeed += 0.00015;
+          gameSpeed += 0.00019;
         }
       });
 
