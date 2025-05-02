@@ -175,10 +175,10 @@ html, body {
     let car = { x: canvas.width / 2 - 25, y: canvas.height - 120, width: 50, height: 80, speed: 5 };
     let obstacles = [];
     let hearts = 3;
-    let score = 10000000;
+    let score = 0;
     let highscore = 0;
     let running = false;
-    let gameSpeed = 100;
+    let gameSpeed = 2.5;
     let moveLeft = false;
     let moveRight = false;
 
@@ -253,8 +253,8 @@ html, body {
       car.x = canvas.width / 2 - 25;
       obstacles = [];
       hearts = 3;
-      score = 1000000;
-      gameSpeed = 100;
+      score = 0;
+      gameSpeed = 2.5;
       updateUI();
     }
 
@@ -355,7 +355,7 @@ html, body {
           obstacles.splice(index, 1);
           score += obs.type === "rect" ? 20 : 10;
           if (score > highscore) highscore = score;
-          gameSpeed += 0.001;
+          gameSpeed += 0.1;
         }
       });
 
