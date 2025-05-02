@@ -42,21 +42,26 @@ html, body {
   position: fixed;
   top: 50px;
   right: 30px;
-  background: none;
+  width: 60px; /* Gleiche Größe wie die anderen Buttons */
+  height: 60px;
   border: none;
+  background: rgba(255, 255, 255, 0.2); /* Durchsichtiger Hintergrund wie die anderen Buttons */
+  border-radius: 50%; 
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 5; /* Höher als andere Elemente */
-  padding: 10px;
 }
 
 #pauseButton svg {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   fill: white; /* Weiß, damit es zum UI passt */
 }
 
 #pauseButton:hover svg {
-  fill: lightgray; /* Hover-Effekt */
+background: rgba(255, 255, 255, 0.4);
 }
         #highscore {
       display: inline-block;
