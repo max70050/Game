@@ -261,36 +261,7 @@ html, body {
     });
 
 
-    let isPaused = false;
-
-document.getElementById("pauseButton").addEventListener("click", function () {
-  const pauseIcon = document.getElementById("pauseIcon");
-  const playIcon = document.getElementById("playIcon");
-
-  isPaused = !isPaused;
-
-  if (isPaused) {
-    pauseGame();
-    pauseIcon.style.display = "none"; // Pause-Symbol ausblenden
-    playIcon.style.display = "block"; // Play-Symbol einblenden
-  } else {
-    resumeGame();
-    pauseIcon.style.display = "block"; // Pause-Symbol wieder anzeigen
-    playIcon.style.display = "none"; // Play-Symbol ausblenden
-  }
-});
-
-function pauseGame() {
-  console.log("Spiel pausiert");
-  running = false; // Setze die Variable "running" auf false, um das Spiel zu pausieren
-}
-
-function resumeGame() {
-  console.log("Spiel fortgesetzt");
-  running = true; // Setze die Variable "running" auf true, um das Spiel fortzusetzen
-  requestAnimationFrame(update); // Starte die Animation neu
-}
-
+   
 
     function startGame() {
       startScreen.classList.add("hidden");
