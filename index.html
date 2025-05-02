@@ -175,7 +175,7 @@ html, body {
     let car = { x: canvas.width / 2 - 25, y: canvas.height - 120, width: 50, height: 80, speed: 5 };
     let obstacles = [];
     let hearts = 3;
-    let score = 0;
+    let score = 10000000;
     let highscore = 0;
     let running = false;
     let gameSpeed = 100;
@@ -253,8 +253,8 @@ html, body {
       car.x = canvas.width / 2 - 25;
       obstacles = [];
       hearts = 3;
-      score = 0;
-      gameSpeed = 2;
+      score = 1000000;
+      gameSpeed = 100;
       updateUI();
     }
 
@@ -328,7 +328,7 @@ html, body {
 
       drawCar();
 
-      if (Math.random() < 0.015) spawnObstacle();
+      if (Math.random() < 1.5) spawnObstacle();
 
       obstacles.forEach((obs, index) => {
         obs.y += gameSpeed;
