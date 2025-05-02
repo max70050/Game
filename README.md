@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -39,9 +38,27 @@ html, body {
       display: inline-block;
     }
 
+    #pauseButton {
+    background-color: #4CAF50; /* Gleiche Farbe wie andere Buttons */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px; /* Abgerundete Ecken */
+}
+
+#pauseButton:hover {
+    background-color: #45a049; /* Hover-Effekt */
+}
+
         #highscore {
       display: inline-block;
-      transform: translateX(-30px); /* Highscore-Anzeige um 30px nach links verschieben */
+      transform: translateX(-35px); /* Highscore-Anzeige um 30px nach links verschieben */
     }
 
     #controls {
@@ -146,6 +163,13 @@ html, body {
         <path d="M15.41 16.58L10.83 12l4.58-4.58L14 6l-6 6 6 6z"></path>
       </svg>
     </button>
+
+      <button id="pauseButton">
+    <svg viewBox="0 0 24 24">
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path> <!-- Symbol für Pause -->
+    </svg>
+  </button>
+    
     <button id="rightButton">
       <svg viewBox="0 0 24 24">
         <path d="M8.59 16.58L13.17 12 8.59 7.42 10 6l6 6-6 6z"></path>
@@ -178,7 +202,7 @@ html, body {
     let score = 0;
     let highscore = 0;
     let running = false;
-    let gameSpeed = 100;
+    let gameSpeed = 2;
     let moveLeft = false;
     let moveRight = false;
 
@@ -253,6 +277,7 @@ html, body {
       hearts = 3;
       score = 0;
       gameSpeed = 2;
+      spawnRate = 0.01;
       updateUI();
     }
 
@@ -286,9 +311,34 @@ html, body {
       ctx.fill();
     }
 
+    let isPaused = false;
+
+document.getElementById("pauseButton").addEventListener("click", function () {
+    isPaused = !isPaused;
+    if (isPaused) {
+        pauseGame();
+        this.textContent = "Resume"; // Text des Buttons ändern
+    } else {
+        resumeGame();
+        this.textContent = "Pause"; // Text des Buttons zurücksetzen
+    }
+});
+
+function pauseGame() {
+    // Hier fügst du den Code ein, der das Spiel pausiert
+    console.log("Spiel pausiert"); // Debugging
+    // Beispiel: Animationen stoppen, Timer pausieren, etc.
+}
+
+function resumeGame() {
+    // Hier fügst du den Code ein, der das Spiel fortsetzt
+    console.log("Spiel fortgesetzt"); // Debugging
+    // Beispiel: Animationen wieder starten, Timer fortsetzen, etc.
+}
+
     function spawnObstacle() {
       const type = Math.random() > 0.8 ? "circle" : "rect"; // Fewer tires
-      const color = Math.random() > 0.5 ? "darkgray" : "lightgray";
+      const color = Math.random() > 0.65 ? "darkgray" : "lightgray";
       let newObstacle;
 
       do {
@@ -314,6 +364,14 @@ html, body {
       );
     }
 
+    let spawnRate = 0.01; // Start-Wahrscheinlichkeit für Hindernisse
+
+// Funktion, um die Spawn-Rate jede Sekunde zu erhöhen
+setInterval(() => {
+    spawnRate += 0.001; // Erhöhe die Wahrscheinlichkeit um 0.5% pro Sekunde
+    if (spawnRate > 0.1) spawnRate = 0.1; // Begrenze die maximale Wahrscheinlichkeit
+}, 1000); // Alle 1000ms (1 Sekunde)
+
     function update() {
       if (!running) return;
 
@@ -326,7 +384,9 @@ html, body {
 
       drawCar();
 
-      if (Math.random() < 0.015) spawnObstacle();
+      if (Math.random() < spawnRate) spawnObstacle();
+
+
 
       obstacles.forEach((obs, index) => {
         obs.y += gameSpeed;
@@ -353,7 +413,7 @@ html, body {
           obstacles.splice(index, 1);
           score += obs.type === "rect" ? 20 : 10;
           if (score > highscore) highscore = score;
-          gameSpeed += 0.001;
+          gameSpeed += 0.03115;
         }
       });
 
