@@ -146,6 +146,16 @@ html, body {
     <div id="lives">❤️❤️❤️</div>
     <div id="score">Score: 0</div>
     <div id="highscore">Highscore: 0</div>
+      <button id="pauseButton" title="Pause / Resume">
+        <!-- Pause-Symbol -->
+        <svg id="pauseIcon" viewBox="0 0 24 24">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+        </svg>
+        <!-- Play-Symbol (startet ausgeblendet) -->
+        <svg id="playIcon" viewBox="0 0 24 24" style="display: none;">
+            <path d="M8 5v14l11-7z"></path>
+        </svg>
+    </button>
   </div>
 
   <div id="startScreen">
@@ -165,16 +175,7 @@ html, body {
         <path d="M15.41 16.58L10.83 12l4.58-4.58L14 6l-6 6 6 6z"></path>
       </svg>
     </button>
-    
-<button id="pauseButton" title="Pause / Resume">
-  <svg id="pauseIcon" viewBox="0 0 24 24">
-    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
-  </svg>
-  <svg id="playIcon" viewBox="0 0 24 24" style="display: none;">
-    <path d="M8 5v14l11-7z"></path>
-  </svg>
-</button>
-    
+
     <button id="rightButton">
       <svg viewBox="0 0 24 24">
         <path d="M8.59 16.58L13.17 12 8.59 7.42 10 6l6 6-6 6z"></path>
@@ -427,6 +428,36 @@ setInterval(() => {
         ctx.fill();
       }
     }
+
+    let isPaused = false;
+
+document.getElementById("pauseButton").addEventListener("click", function () {
+    const pauseIcon = document.getElementById("pauseIcon");
+    const playIcon = document.getElementById("playIcon");
+
+    isPaused = !isPaused;
+
+    if (isPaused) {
+        pauseGame();
+        pauseIcon.style.display = "none"; // Pause-Symbol ausblenden
+        playIcon.style.display = "block"; // Play-Symbol einblenden
+    } else {
+        resumeGame();
+        pauseIcon.style.display = "block"; // Pause-Symbol wieder anzeigen
+        playIcon.style.display = "none"; // Play-Symbol ausblenden
+    }
+});
+
+function pauseGame() {
+    console.log("Spiel pausiert");
+    running = false; // Setze die Variable "running" auf false, um das Spiel zu pausieren
+}
+
+function resumeGame() {
+    console.log("Spiel fortgesetzt");
+    running = true; // Setze die Variable "running" auf true, um das Spiel fortzusetzen
+    requestAnimationFrame(update); // Starte die Animation neu
+}
   </script>
 </body>
 </html>
