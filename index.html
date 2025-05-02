@@ -232,19 +232,6 @@ html, body {
     });
 
 
-// Initiale Geschwindigkeit
-let gameSpeed = 2; 
-speedDisplay.textContent = `Geschwindigkeit: ${gameSpeed.toFixed(1)}`;
-
-// Intervall für die Erhöhung der Geschwindigkeit
-const speedIncreaseInterval = 500; // Erhöhung alle 5 Sekunden
-const speedIncrement = 0.5; // Geschwindigkeitserhöhung
-
-// Funktion zur Erhöhung der Geschwindigkeit
-function increaseGameSpeed() {
-    gameSpeed += speedIncrement;
-    speedDisplay.textContent = `Geschwindigkeit: ${gameSpeed.toFixed(1)}`;
-}
 
 
 
