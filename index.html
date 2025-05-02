@@ -287,7 +287,7 @@ html, body {
 
     function spawnObstacle() {
       const type = Math.random() > 0.8 ? "circle" : "rect"; // Fewer tires
-      const color = Math.random() > 0.5 ? "darkgray" : "lightgray";
+      const color = Math.random() > 0.65 ? "darkgray" : "lightgray";
       let newObstacle;
 
       do {
@@ -325,7 +325,15 @@ html, body {
 
       drawCar();
 
-      if (Math.random() < 0.015) spawnObstacle();
+      if (Math.random() < spawnRate) spawnObstacle();
+
+      let spawnRate = 0.015; // Start-Wahrscheinlichkeit für Hindernisse
+
+// Funktion, um die Spawn-Rate jede Sekunde zu erhöhen
+setInterval(() => {
+    spawnRate += 0.005; // Erhöhe die Wahrscheinlichkeit um 0.5% pro Sekunde
+    if (spawnRate > 0.1) spawnRate = 0.1; // Begrenze die maximale Wahrscheinlichkeit
+}, 1000); // Alle 1000ms (1 Sekunde)
 
       obstacles.forEach((obs, index) => {
         obs.y += gameSpeed;
