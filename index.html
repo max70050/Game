@@ -77,7 +77,7 @@ html, body {
     }
     
    #rightButton {
-      transform: translateX(-30px); /* Rechter Button um 30px nach links verschieben */
+      transform: translateX(-40px); /* Rechter Button um 30px nach links verschieben */
     }
     
     #startScreen, #gameOverScreen {
