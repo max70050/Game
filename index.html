@@ -108,6 +108,8 @@
       font-size: 20px;
     }
   </style>
+
+    
 </head>
 <body>
   <div id="ui">
@@ -169,14 +171,15 @@
     let moveLeft = false;
     let moveRight = false;
 
+    // Event Listener für Buttons und Touch
     startButton.addEventListener("click", startGame);
     restartButton.addEventListener("click", restartGame);
+
     leftButton.addEventListener("mousedown", () => moveLeft = true);
     leftButton.addEventListener("mouseup", () => moveLeft = false);
     rightButton.addEventListener("mousedown", () => moveRight = true);
     rightButton.addEventListener("mouseup", () => moveRight = false);
 
-    // Touch events for iPad
     leftButton.addEventListener("touchstart", () => moveLeft = true);
     leftButton.addEventListener("touchend", () => moveLeft = false);
     rightButton.addEventListener("touchstart", () => moveRight = true);
@@ -192,17 +195,19 @@
     });
 
     function startGame() {
+      // Start Screen ausblenden, Spiel starten
       startScreen.classList.add("hidden");
       resetGame();
-      running = true;
-      requestAnimationFrame(update);
+      running = true; // Flag setzen
+      requestAnimationFrame(update); // Spielschleife starten
     }
 
     function restartGame() {
+      // Game Over Screen ausblenden, Spiel neu starten
       gameOverScreen.classList.add("hidden");
       resetGame();
-      running = true;
-      requestAnimationFrame(update);
+      running = true; // Flag setzen
+      requestAnimationFrame(update); // Spielschleife starten
     }
 
     function resetGame() {
@@ -274,7 +279,7 @@
     }
 
     function update() {
-      if (!running) return;
+      if (!running) return; // Beende Schleife, wenn Spiel nicht läuft
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -299,6 +304,18 @@
 
       updateUI();
       requestAnimationFrame(update);
+    }
+
+    function drawObstacle(obs) {
+      if (obs.type === "rect") {
+        ctx.fillStyle = obs.color;
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      } else {
+        ctx.beginPath();
+        ctx.arc(obs.x, obs.y, 25, 0, Math.PI * 2);
+        ctx.fillStyle = obs.color;
+        ctx.fill();
+      }
     }
   </script>
 </body>
