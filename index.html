@@ -317,14 +317,7 @@ html, body {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      score++;
-if (score % 100 === 0) {
-gameSpeed += 0.5;
-}
-drawCar ();
-updateUI ();
-requestAnimationFrame (update);
-}
+
 
       if (moveLeft) car.x = Math.max(0, car.x - car.speed);
       if (moveRight) car.x = Math.min(canvas.width - car.width, car.x + car.speed);
