@@ -318,18 +318,7 @@ html, body {
       ctx.fill();
     }
 
-    let isPaused = false;
-
-document.getElementById("pauseButton").addEventListener("click", function () {
-    isPaused = !isPaused;
-    if (isPaused) {
-        pauseGame();
-        this.textContent = "Resume"; // Text des Buttons ändern
-    } else {
-        resumeGame();
-        this.textContent = "Pause"; // Text des Buttons zurücksetzen
-    }
-});
+   
 
 
     function spawnObstacle() {
