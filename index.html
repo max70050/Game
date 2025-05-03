@@ -63,7 +63,7 @@ html, body {
     #restartButtonUI {
   position: fixed;
   top: 60px; /* Diese Position kann angepasst werden */
-  right: 90px;
+  right: 100px;
   width: 60px;
   height: 60px;
   border: none;
@@ -481,9 +481,10 @@ setInterval(() => {
 });
 
     const restartButtonUI = document.getElementById("restartButtonUI");
-restartButtonUI.addEventListener("click", function () {
+restartButtonUI.addEventListener("click",
+  function restartButtonUI {
   gameOverScreen.classList.add("hidden"); // Spiel-Ende-Bildschirm ausblenden
- running = false;
+  running = false;
   resetGame(); // Spiel zurücksetzen
   gamespeed = 2;
   running = true; // Spielzustand auf "laufend" setzen
