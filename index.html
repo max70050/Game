@@ -63,7 +63,7 @@ html, body {
     #restartButtonUI {
   position: fixed;
   top: 60px; /* Diese Position kann angepasst werden */
-  right: 70px;
+  right: 90px;
   width: 60px;
   height: 60px;
   border: none;
@@ -479,6 +479,15 @@ setInterval(() => {
         requestAnimationFrame(update);
     }
 });
+
+    const restartButtonUI = document.getElementById("restartButtonUI");
+restartButtonUI.addEventListener("click", function () {
+  gameOverScreen.classList.add("hidden"); // Spiel-Ende-Bildschirm ausblenden
+  resetGame(); // Spiel zurücksetzen
+  running = true; // Spielzustand auf "laufend" setzen
+  requestAnimationFrame(update); // Spielschleife starten
+});
+    
   </script>
 </body>
 </html>
