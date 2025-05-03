@@ -484,6 +484,7 @@ setInterval(() => {
 restartButtonUI.addEventListener("click", function () {
   gameOverScreen.classList.add("hidden"); // Spiel-Ende-Bildschirm ausblenden
   resetGame(); // Spiel zurücksetzen
+  gamespeed = 2;
   running = true; // Spielzustand auf "laufend" setzen
   requestAnimationFrame(update); // Spielschleife starten
 });
