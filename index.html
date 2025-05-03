@@ -60,6 +60,28 @@ html, body {
   fill: white; /* Weiß, damit es zum UI passt */
 }
 
+    #restartButtonUI {
+  position: fixed;
+  top: 60px; /* Diese Position kann angepasst werden */
+  right: 70px;
+  width: 60px;
+  height: 60px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+}
+
+#restartButtonUI svg {
+  width: 30px;
+  height: 30px;
+  fill: white;
+}
+
 
         #highscore {
       display: inline-block;
@@ -149,6 +171,11 @@ html, body {
     <div id="lives">❤️❤️❤️</div>
     <div id="score">Score: 0</div>
     <div id="highscore">Highscore: 0</div>
+    <button id="restartButtonUI" title="Restart">
+  <svg id="restartIcon" viewBox="0 0 24 24">
+    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 3.31-2.69 6-6 6s-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path>
+  </svg>
+</button>
       <button id="pauseButton" title="Pause / Resume">
         <!-- Pause-Symbol -->
         <svg id="pauseIcon" viewBox="0 0 24 24">
