@@ -303,6 +303,7 @@ html, body {
     }
 
     function restartGame() {
+      running = false;
       gameOverScreen.classList.add("hidden");
       resetGame();
       running = true;
