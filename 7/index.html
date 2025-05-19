@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<title>Breakout Game</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%; background: black; overflow: hidden;
+    font-family: sans-serif;
+  }
+
+  #container {
+    position: relative;
+    width: 100vw; height: 100vh;
+    user-select: none;
+    background: black;
+  }
+
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background: black;
+  }
+
+  #gameTitle {
+  position: absolute;
+  top: 10px;
+  left: 45%;
+  font-size: 40px;
+  font-weight: bold;
+  color: black; /* schwarze Schrift */
+  user-select: none;
+  z-index: 10;
+}
+
+#scoreDisplay {
+  top: 20px;
+  left: 120px; /* etwas weiter rechts als vorher */
+}
+
+
+
+  #scoreDisplay, #highscoreDisplay {
+    position: absolute;
+    top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    color: black; /* schwarze Schrift */
+    z-index: 10;
+    user-select: none;
+  }
+
+  #scoreDisplay {
+    left: 20px;
+  }
+
+  #highscoreDisplay {
+    right: 20px;
+  }
+
+  /* Buttons unten */
+  #leftButton, #rightButton {
+    position: absolute;
+    bottom: 20px;
+    width: 60px;
+    height: 60px;
+    border: 2px solid white;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    font-size: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+    z-index: 10;
+  }
+
+  #leftButton:hover, #rightButton:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  /* Linker Button: ca. 15px nach links vom linken Rand (negativer left) */
+  #leftButton {
+    left: 100px;
+  }
+
+  /* Rechter Button: 100px vom rechten Rand nach links */
+  #rightButton {
+    right: 100px;
+  }
+
+  /* Start-Button mittig unten */
+  #startButton {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background: white;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<div id="container">
+  <div id="scoreDisplay">Punkte: 0</div>
+  <div id="highscoreDisplay">Highscore: 0</div>
+  <canvas id="game"></canvas>
+    <div id="gameTitle">Breakout</div>
+
+  <div id="leftButton">&#x25C0;</div>
+  <div id="rightButton">&#x25B6;</div>
+  <button id="startButton">Start</button>
+</div>
+
+
+<script>
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const highscoreDisplay = document.getElementById('highscoreDisplay');
+  const leftButton = document.getElementById('leftButton');
+  const rightButton = document.getElementById('rightButton');
+  const startButton = document.getElementById('startButton');
+
+  const wallSize = 50;
+  const brickGap = 4;
+  const brickCols = 14;
+  const brickRows = 8;
+
+  let paddle = {
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    dx: 0,
+    speed: 9
+  };
+
+  let ball = {
+    width: 10,
+    height: 10,
+    x: 0,
+    y: 0,
+    dx: 0,
+    dy: 0,
+    speed: 4
+  };
+
+  let level = [];
+  let score = 0;
+  let highscore = 0;
+  let isRunning = false;
+
+  // Neue Variablen für die Geschwindigkeitssteigerung
+  const speedIncreaseInterval = 5000; // alle 5 Sekunden
+  let lastSpeedIncreaseTime = Date.now();
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    paddle.width = (canvas.width - 2 * wallSize - (brickCols - 1) * brickGap) / brickCols * 1.5;
+    paddle.height = 30;
+    paddle.x = canvas.width / 2 - paddle.width / 2;
+    paddle.y = canvas.height - 80;
+
+    createLevel();
+    resetBall();
+  }
+
+  function createLevel() {
+    level = [];
+    const brickWidth = (canvas.width - 2 * wallSize - (brickCols - 1) * brickGap) / brickCols;
+    const brickHeight = 30;
+    const colors = ['red', 'red', 'orange', 'orange', 'green', 'green', 'yellow', 'yellow'];
+
+    for (let row = 0; row < brickRows; row++) {
+      for (let col = 0; col < brickCols; col++) {
+        level.push({
+          x: wallSize + col * (brickWidth + brickGap),
+          y: wallSize + 20 + row * (brickHeight + brickGap),
+          width: brickWidth,
+          height: brickHeight,
+          color: colors[row]
+        });
+      }
+    }
+  }
+
+  function resetBall() {
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.dx = 0;
+    ball.dy = 0;
+    isRunning = false;
+    score = 0;
+    scoreDisplay.textContent = 'Punkte: 0';
+  }
+
+  function collides(a, b) {
+    return a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
+  }
+
+  function update() {
+    paddle.x += paddle.dx;
+
+    if (paddle.x < wallSize) paddle.x = wallSize;
+    if (paddle.x + paddle.width > canvas.width - wallSize) paddle.x = canvas.width - wallSize - paddle.width;
+
+    if (!isRunning) return;
+
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    if (ball.x < wallSize) ball.dx = Math.abs(ball.dx);
+    if (ball.x + ball.width > canvas.width - wallSize) ball.dx = -Math.abs(ball.dx);
+    if (ball.y < wallSize) ball.dy = Math.abs(ball.dy);
+    if (ball.y > canvas.height) resetBall();
+
+    if (collides(ball, paddle)) {
+      ball.dy = -Math.abs(ball.dy);
+      ball.y = paddle.y - ball.height;
+    }
+
+    for (let i = 0; i < level.length; i++) {
+      if (collides(ball, level[i])) {
+        const brick = level[i];
+        level.splice(i, 1);
+        score += 10;
+        scoreDisplay.textContent = 'Punkte: ' + score;
+        if (score > highscore) {
+          highscore = score;
+          highscoreDisplay.textContent = 'Highscore: ' + highscore;
+        }
+
+        const ballBottom = ball.y + ball.height;
+        const ballTop = ball.y;
+        const brickBottom = brick.y + brick.height;
+        const brickTop = brick.y;
+
+        if (ballBottom - ball.dy <= brickTop || ballTop - ball.dy >= brickBottom) {
+          ball.dy *= -1;
+        } else {
+          ball.dx *= -1;
+        }
+        break;
+      }
+    }
+
+    // Ballgeschwindigkeit alle 5 Sekunden erhöhen (max 10)
+    const now = Date.now();
+    if (now - lastSpeedIncreaseTime > speedIncreaseInterval) {
+      const maxSpeed = 10;
+      if (Math.abs(ball.dx) < maxSpeed) {
+        ball.dx *= 1.1;
+        ball.dy *= 1.1;
+      }
+      lastSpeedIncreaseTime = now;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Wände
+    ctx.fillStyle = 'lightgrey';
+    ctx.fillRect(0, 0, wallSize, canvas.height);
+    ctx.fillRect(canvas.width - wallSize, 0, wallSize, canvas.height);
+    ctx.fillRect(0, 0, canvas.width, wallSize);
+
+    // Ball
+    ctx.fillStyle = 'white';
+    ctx.fillRect(ball.x, ball.y, ball.width, ball.height);
+
+    // Paddle
+    ctx.fillStyle = 'cyan';
+    ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+    // Bricks
+    for (const brick of level) {
+      ctx.fillStyle = brick.color;
+      ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+    }
+  }
+
+  function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Tastatur-Events (Pfeiltasten steuern Paddle)
+  document.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    if (e.key === 'ArrowLeft') paddle.dx = -paddle.speed;
+    else if (e.key === 'ArrowRight') paddle.dx = paddle.speed;
+    else if ((e.key === ' ' || e.code ==='space') && !isRunning) {
+      ball.dx = ball.speed;
+      ball.dy = ball.speed;
+      isRunning = true;
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' && paddle.dx < 0) paddle.dx = 0;
+    else if (e.key === 'ArrowRight' && paddle.dx > 0) paddle.dx = 0;
+  });
+
+  // Touch-Buttons (unten links und rechts)
+  leftButton.addEventListener('touchstart', () => { paddle.dx = -paddle.speed; });
+  leftButton.addEventListener('touchend', () => { paddle.dx = 0; });
+  rightButton.addEventListener('touchstart', () => { paddle.dx = paddle.speed; });
+  rightButton.addEventListener('touchend', () => { paddle.dx = 0; });
+
+  // Klick auf Buttons (für Desktop)
+  leftButton.addEventListener('mousedown', () => { paddle.dx = -paddle.speed; });
+  leftButton.addEventListener('mouseup', () => { paddle.dx = 0; });
+  leftButton.addEventListener('mouseleave', () => { paddle.dx = 0; });
+
+  rightButton.addEventListener('mousedown', () => { paddle.dx = paddle.speed; });
+  rightButton.addEventListener('mouseup', () => { paddle.dx = 0; });
+  rightButton.addEventListener('mouseleave', () => { paddle.dx = 0; });
+
+  // Start-Button starten
+  startButton.addEventListener('click', () => {
+    if (!isRunning) {
+      ball.dx = ball.speed;
+      ball.dy = ball.speed;
+      isRunning = true;
+    }
+  });
+
+  window.addEventListener('resize', resize);
+
+  resize();
+  gameLoop();
+</script>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pixel Pong</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: black;
+      font-family: Arial, sans-serif;
+      color: white;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin: 10px;
+      text-align: center;
+    }
+
+    #score {
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      border: 2px solid white;
+    }
+
+    .controls {
+      position: fixed;
+      bottom: 10px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .left-controls {
+      left: 10px;
+    }
+
+    .right-controls {
+      right: 10px;
+    }
+
+    .control-btn {
+      width: 50px;
+      height: 50px;
+      background-color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      color: black;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .control-btn:active {
+      background-color: lightgray;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pixel Pong</h1>
+  <p style="text-align:center;">Links: W/S &nbsp;&nbsp;|&nbsp;&nbsp; Rechts: ↑/↓</p>
+  <div id="score">Punkte – Links: 0 | Rechts: 0</div>
+  <canvas width="800" height="585" id="game"></canvas>
+
+  <!-- Linke Steuerung -->
+  <div class="controls left-controls">
+    <button class="control-btn" id="left-up">▲</button>
+    <button class="control-btn" id="left-down">▼</button>
+  </div>
+
+  <!-- Rechte Steuerung -->
+  <div class="controls right-controls">
+    <button class="control-btn" id="right-up">▲</button>
+    <button class="control-btn" id="right-down">▼</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const context = canvas.getContext('2d');
+    const grid = 15;
+    const paddleHeight = grid * 5;
+    const maxPaddleY = canvas.height - grid - paddleHeight;
+
+    let paddleSpeed = 6;
+    let ballSpeed = 5;
+
+    let scoreLeft = 0;
+    let scoreRight = 0;
+
+    const scoreBoard = document.getElementById('score');
+
+    const leftPaddle = {
+      x: grid * 2,
+      y: canvas.height / 2 - paddleHeight / 2,
+      width: grid,
+      height: paddleHeight,
+      dy: 0
+    };
+
+    const rightPaddle = {
+      x: canvas.width - grid * 3,
+      y: canvas.height / 2 - paddleHeight / 2,
+      width: grid,
+      height: paddleHeight,
+      dy: 0
+    };
+
+    const ball = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      width: grid,
+      height: grid,
+      resetting: false,
+      dx: ballSpeed,
+      dy: -ballSpeed
+    };
+
+    function collides(obj1, obj2) {
+      return obj1.x < obj2.x + obj2.width &&
+             obj1.x + obj1.width > obj2.x &&
+             obj1.y < obj2.y + obj2.height &&
+             obj1.y + obj1.height > obj2.y;
+    }
+
+    function updateScore() {
+      scoreBoard.textContent = `Punkte – Links: ${scoreLeft} | Rechts: ${scoreRight}`;
+    }
+
+    function loop() {
+      requestAnimationFrame(loop);
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      leftPaddle.y += leftPaddle.dy;
+      rightPaddle.y += rightPaddle.dy;
+
+      leftPaddle.y = Math.max(grid, Math.min(maxPaddleY, leftPaddle.y));
+      rightPaddle.y = Math.max(grid, Math.min(maxPaddleY, rightPaddle.y));
+
+      context.fillStyle = 'white';
+      context.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
+      context.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
+
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+
+      if (ball.y < grid) {
+        ball.y = grid;
+        ball.dy *= -1;
+      } else if (ball.y + grid > canvas.height - grid) {
+        ball.y = canvas.height - grid * 2;
+        ball.dy *= -1;
+      }
+
+      if ((ball.x < 0 || ball.x > canvas.width) && !ball.resetting) {
+        ball.resetting = true;
+        if (ball.x < 0) scoreRight++;
+        else scoreLeft++;
+        updateScore();
+
+        setTimeout(() => {
+          ball.resetting = false;
+          ball.x = canvas.width / 2;
+          ball.y = canvas.height / 2;
+        }, 400);
+      }
+
+      if (collides(ball, leftPaddle)) {
+        ball.dx *= -1;
+        ball.x = leftPaddle.x + leftPaddle.width;
+      } else if (collides(ball, rightPaddle)) {
+        ball.dx *= -1;
+        ball.x = rightPaddle.x - ball.width;
+      }
+
+      context.fillRect(ball.x, ball.y, ball.width, ball.height);
+
+      context.fillStyle = 'lightgrey';
+      context.fillRect(0, 0, canvas.width, grid);
+      context.fillRect(0, canvas.height - grid, canvas.width, canvas.height);
+
+      for (let i = grid; i < canvas.height - grid; i += grid * 2) {
+        context.fillRect(canvas.width / 2 - grid / 2, i, grid, grid);
+      }
+    }
+
+    // Tastatursteuerung
+    document.addEventListener('keydown', function(e) {
+      if ([38, 40].includes(e.which)) e.preventDefault(); // Scroll blockieren
+
+      if (e.which === 38) rightPaddle.dy = -paddleSpeed;
+      else if (e.which === 40) rightPaddle.dy = paddleSpeed;
+      if (e.which === 87) leftPaddle.dy = -paddleSpeed;
+      else if (e.which === 83) leftPaddle.dy = paddleSpeed;
+    });
+
+    document.addEventListener('keyup', function(e) {
+      if ([38, 40].includes(e.which)) e.preventDefault();
+
+      if (e.which === 38 || e.which === 40) rightPaddle.dy = 0;
+      if (e.which === 83 || e.which === 87) leftPaddle.dy = 0;
+    });
+
+    // Button-Events (Touch & Maus)
+    const setPaddle = (side, dir) => {
+      if (side === 'left') leftPaddle.dy = dir * paddleSpeed;
+      else rightPaddle.dy = dir * paddleSpeed;
+    };
+    const stopPaddle = (side) => {
+      if (side === 'left') leftPaddle.dy = 0;
+      else rightPaddle.dy = 0;
+    };
+
+    document.getElementById('left-up').addEventListener('touchstart', () => setPaddle('left', -1));
+    document.getElementById('left-up').addEventListener('touchend', () => stopPaddle('left'));
+    document.getElementById('left-down').addEventListener('touchstart', () => setPaddle('left', 1));
+    document.getElementById('left-down').addEventListener('touchend', () => stopPaddle('left'));
+
+    document.getElementById('right-up').addEventListener('touchstart', () => setPaddle('right', -1));
+    document.getElementById('right-up').addEventListener('touchend', () => stopPaddle('right'));
+    document.getElementById('right-down').addEventListener('touchstart', () => setPaddle('right', 1));
+    document.getElementById('right-down').addEventListener('touchend', () => stopPaddle('right'));
+
+    // Optional auch mit Maus
+    document.querySelectorAll('.control-btn').forEach(btn => {
+      btn.addEventListener('mousedown', (e) => {
+        const side = e.target.id.includes('left') ? 'left' : 'right';
+        const dir = e.target.id.includes('up') ? -1 : 1;
+        setPaddle(side, dir);
+      });
+      btn.addEventListener('mouseup', (e) => {
+        const side = e.target.id.includes('left') ? 'left' : 'right';
+        stopPaddle(side);
+      });
+      btn.addEventListener('mouseleave', (e) => {
+        const side = e.target.id.includes('left') ? 'left' : 'right';
+        stopPaddle(side);
+      });
+    });
+
+    // Spiel starten
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

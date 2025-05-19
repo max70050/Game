@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Endless Runner</title>
+<style>
+  * {
+    margin: 0; padding: 0; box-sizing: border-box;
+  }
+  body, html {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #003a22; /* dunkles sattes Grün */
+    font-family: Arial, sans-serif;
+    user-select: none;
+  }
+  canvas {
+    display: block;
+    background: #004f32; /* etwas heller als body, aber dunkelgrün */
+  }
+  #score, #highscore {
+    position: fixed;
+    color: #0ff;
+    font-size: 20px;
+    padding: 8px 15px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.7); /* dunkler als vorher */
+    border-radius: 5px;
+    z-index: 10;
+    user-select: none;
+  }
+  #score {
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  #highscore {
+    top: 10px;
+    left: 10px;
+  }
+  #gameOverText {
+    position: fixed;
+    top: 25%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #0ff; /* helles Blau */
+    font-size: 64px; /* größer */
+    font-weight: bold;
+    display: none;
+    z-index: 20;
+    user-select: none;
+    text-shadow: 0 0 8px #0ff;
+  }
+  #gameOverDetails {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #0ff;
+    font-size: 28px; /* größer */
+    display: none;
+    z-index: 20;
+    user-select: none;
+    text-shadow: 0 0 6px #0ff;
+  }
+  #restartBtn {
+    position: fixed;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 15px 40px; /* größer */
+    font-size: 28px; /* größer */
+    font-weight: bold;
+    background-color: #0ff;
+    color: #003a22;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    display: none;
+    z-index: 20;
+    user-select: none;
+    box-shadow: 0 0 15px #0ff;
+    transition: background-color 0.3s ease;
+  }
+  #restartBtn:hover {
+    background-color: #0cc;
+  }
+  #jumpBtn {
+    position: fixed;
+    bottom: 30px;
+    right: 25px;
+    width: 100px;
+    height: 100px;
+    background: #00775e; /* schönes sattes Türkisgrün, anders als Boden aber harmonisch */
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+    color: #cceee6;
+    border: none;
+    cursor: pointer;
+    user-select: none;
+    z-index: 20;
+    box-shadow: 0 0 15px #0ff;
+    transition: background-color 0.3s ease;
+  }
+  #jumpBtn:active {
+    background: #005b46;
+    box-shadow: 0 0 25px #0cc;
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="score">Score: 0</div>
+<div id="highscore">Highscore: 0</div>
+<div id="gameOverText">You Lost!</div>
+<div id="gameOverDetails"></div>
+<button id="restartBtn">Restart</button>
+<button id="jumpBtn">Jump</button>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreUI = document.getElementById('score');
+  const highscoreUI = document.getElementById('highscore');
+  const gameOverText = document.getElementById('gameOverText');
+  const gameOverDetails = document.getElementById('gameOverDetails');
+  const restartBtn = document.getElementById('restartBtn');
+  const jumpBtn = document.getElementById('jumpBtn');
+
+  let width, height;
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Spielparameter
+  const gravity = 0.8;
+  const platformHeight = 20;
+
+  // Spieler-Objekt
+  const player = {
+    x: 190,
+    y: 0,
+    size: 40,
+    color: '#ffd700',
+    velY: 0,
+    speedX: 6,
+    jumping: false,
+    rotation: 0,
+    rotateTarget: 0,
+  };
+
+  // Kamera-Offset
+  let camX = 0;
+
+  // Plattformen
+  let platforms = [];
+
+  // Score und Highscore
+  let score = 0;
+  let highscore = 0;
+  let gameOver = false;
+
+  function restart() {
+    gameOver = false;
+    player.x = 150;
+    player.y = height - platformHeight - player.size - 50;
+    player.velY = 0;
+    player.jumping = false;
+    player.rotation = 0;
+    player.rotateTarget = 0;
+    camX = 0;
+    score = 0;
+    platforms = [];
+    createStartPlatform();
+    updateScoreUI();
+    updateHighscoreUI();
+    gameOverText.style.display = 'none';
+    gameOverDetails.style.display = 'none';
+    restartBtn.style.display = 'none';
+    loop();
+  }
+
+  function createStartPlatform() {
+    const widthHalf = width / 2;
+    platforms.push({
+      x: 0,
+      y: height - platformHeight,
+      width: widthHalf,
+      height: platformHeight
+    });
+  }
+
+  function generatePlatforms() {
+    const lastPlat = platforms[platforms.length - 1];
+    if (lastPlat.x + lastPlat.width > player.x + width) return;
+
+    // Mindestabstand jetzt etwas größer als vorher (zuvor 100, jetzt 130)
+    const minGap = 130;
+    const maxGap = 180;
+    const minWidth = 80;
+    const maxWidth = 180;
+
+    const gap = minGap + Math.random() * (maxGap - minGap);
+    const widthPlat = minWidth + Math.random() * (maxWidth - minWidth);
+
+    let yPlat = height - platformHeight - (Math.random() * 80);
+    if (yPlat > height - platformHeight) yPlat = height - platformHeight;
+
+    platforms.push({
+      x: lastPlat.x + lastPlat.width + gap,
+      y: yPlat,
+      width: widthPlat,
+      height: platformHeight
+    });
+  }
+
+  function updateScoreUI() {
+    scoreUI.textContent = `Score: ${score}`;
+  }
+  function updateHighscoreUI() {
+    highscoreUI.textContent = `Highscore: ${highscore}`;
+  }
+
+  function showGameOver() {
+    gameOver = true;
+    restartBtn.style.display = 'block';
+    gameOverText.style.display = 'block';
+    gameOverDetails.style.display = 'block';
+    gameOverText.style.top = '25%';
+    gameOverText.style.fontSize = '64px';
+    gameOverDetails.textContent = `Score: ${score}`;
+    if (score > highscore) {
+      highscore = score;
+      updateHighscoreUI();
+      gameOverDetails.textContent += '  (New Highscore!)';
+    }
+  }
+
+  function tryJump() {
+    if (!player.jumping && !gameOver) {
+      player.velY = -16;
+      player.jumping = true;
+      player.rotateTarget = (player.rotateTarget + 90) % 360;
+    }
+  }
+
+  function update() {
+    if (gameOver) return;
+
+    player.x += player.speedX;
+    camX = player.x - 150;
+
+    player.velY += gravity;
+    player.y += player.velY;
+
+    if (player.rotation !== player.rotateTarget) {
+      let diff = player.rotateTarget - player.rotation;
+      if (diff > 180) diff -= 360;
+      if (diff < -180) diff += 360;
+      player.rotation += diff * 0.2;
+    }
+
+    let onPlatform = false;
+    for (const plat of platforms) {
+      if (
+        player.x + player.size > plat.x &&
+        player.x < plat.x + plat.width &&
+        player.y + player.size > plat.y &&
+        player.y + player.size < plat.y + plat.height + 20 &&
+        player.velY >= 0
+      ) {
+        player.y = plat.y - player.size;
+        player.velY = 0;
+        player.jumping = false;
+        onPlatform = true;
+        break;
+      }
+    }
+
+    if (player.y > height) {
+      showGameOver();
+    }
+
+    // Plattformen generieren
+    generatePlatforms();
+
+    // Score aktualisieren
+    score = Math.floor(player.x / 10);
+    updateScoreUI();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    // Plattformen zeichnen
+    ctx.fillStyle = '#2d7c4f'; // dunkler Grünton Boden
+    for (const plat of platforms) {
+      ctx.fillRect(plat.x - camX, plat.y, plat.width, plat.height);
+    }
+
+    // Spieler zeichnen (quadratisch mit Gesicht)
+    ctx.save();
+    ctx.translate(player.x - camX + player.size / 2, player.y + player.size / 2);
+    ctx.rotate((player.rotation * Math.PI) / 180);
+    ctx.fillStyle = player.color;
+    ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
+
+    // Gesicht: zwei Augen (Striche) und Mund (Strich)
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    // linkes Auge
+    ctx.moveTo(-player.size / 4, -player.size / 6);
+    ctx.lineTo(-player.size / 8, -player.size / 6);
+    // rechtes Auge
+    ctx.moveTo(player.size / 8, -player.size / 6);
+    ctx.lineTo(player.size / 4, -player.size / 6);
+    // Mund unten
+    ctx.moveTo(-player.size / 4, player.size / 4);
+    ctx.lineTo(player.size / 4, player.size / 4);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function loop() {
+    update();
+    draw();
+    if (!gameOver) {
+      requestAnimationFrame(loop);
+    }
+  }
+
+  restartBtn.addEventListener('click', () => {
+    restart();
+  });
+
+  jumpBtn.addEventListener('click', () => {
+    tryJump();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if ((e.code === 'Space' || e.code === 'ArrowUp') && !gameOver) {
+      tryJump();
+    }
+    if (e.code === 'Enter' && gameOver) {
+      restart();
+    }
+  });
+
+  restart();
+})();
+</script>
+</body>
+</html>

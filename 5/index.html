@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snake</title>
+  <meta charset="UTF-8">
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: black;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    color: white;
+    font-family: Arial, sans-serif;
+    position: relative;
+  }
+
+  h1 {
+    font-size: 48px;
+    font-weight: bold;
+    margin: 20px 0 5px;
+  }
+
+  p {
+    font-size: 18px;
+    margin: 0 0 10px;
+  }
+
+  #scoreboard {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 18px;
+    padding: 0 10px;
+  }
+
+  canvas {
+    border: 1px solid white;
+  }
+
+  .controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: grid;
+    grid-template-columns: 60px 60px 60px;
+    grid-template-rows: 60px 60px;
+    gap: 10px;
+    user-select: none;
+  }
+
+  .button {
+    background: #222;
+    color: white;
+    border: 2px solid white;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 10px;
+  }
+
+  .button:active {
+    background: #555;
+  }
+
+  /* Pfeilanordnung */
+  .up {
+    grid-column: 2 / 3;
+  }
+  .left {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+  }
+  .down {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+  }
+  .right {
+    grid-column: 3 / 4;
+    grid-row: 2 / 3;
+  }
+  </style>
+</head>
+<body>
+
+<h1>Snake</h1>
+<p>Steuerung mit den Pfeiltasten oder Buttons</p>
+
+<div id="scoreboard">
+  <div id="score">Länge: 4</div>
+  <div id="highscore">Highscore: 4</div>
+</div>
+
+<canvas width="400" height="400" id="game"></canvas>
+
+<!-- Steuerungsbuttons -->
+<div class="controls">
+  <div class="button up" data-dir="up">↑</div>
+  <div class="button left" data-dir="left">←</div>
+  <div class="button down" data-dir="down">↓</div>
+  <div class="button right" data-dir="right">→</div>
+</div>
+
+<script>
+var canvas = document.getElementById('game');
+var context = canvas.getContext('2d');
+var scoreDisplay = document.getElementById('score');
+var highscoreDisplay = document.getElementById('highscore');
+var grid = 16;
+var count = 0;
+
+var snake = {
+  x: 160,
+  y: 160,
+  dx: grid,
+  dy: 0,
+  cells: [],
+  maxCells: 4
+};
+
+var apple = {
+  x: 320,
+  y: 320
+};
+
+// Highscore speichern & laden
+var highscore = localStorage.getItem('snake_highscore') || 4;
+
+// Zufallszahl im Raster
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function updateScore() {
+  scoreDisplay.textContent = "Länge: " + snake.maxCells;
+  if (snake.maxCells > highscore) {
+    highscore = snake.maxCells;
+    localStorage.setItem('snake_highscore', highscore);
+  }
+  highscoreDisplay.textContent = "Highscore: " + highscore;
+}
+
+function loop() {
+  requestAnimationFrame(loop);
+  if (++count < 4) return;
+
+  count = 0;
+  context.clearRect(0,0,canvas.width,canvas.height);
+
+  snake.x += snake.dx;
+  snake.y += snake.dy;
+
+  if (snake.x < 0) snake.x = canvas.width - grid;
+  else if (snake.x >= canvas.width) snake.x = 0;
+  if (snake.y < 0) snake.y = canvas.height - grid;
+  else if (snake.y >= canvas.height) snake.y = 0;
+
+  snake.cells.unshift({x: snake.x, y: snake.y});
+  if (snake.cells.length > snake.maxCells) snake.cells.pop();
+
+  context.fillStyle = 'red';
+  context.fillRect(apple.x, apple.y, grid-1, grid-1);
+
+  context.fillStyle = 'green';
+  snake.cells.forEach(function(cell, index) {
+    context.fillRect(cell.x, cell.y, grid-1, grid-1);
+
+    if (cell.x === apple.x && cell.y === apple.y) {
+      snake.maxCells++;
+      apple.x = getRandomInt(0, 25) * grid;
+      apple.y = getRandomInt(0, 25) * grid;
+      updateScore();
+    }
+
+    for (var i = index + 1; i < snake.cells.length; i++) {
+      if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+        snake.x = 160;
+        snake.y = 160;
+        snake.cells = [];
+        snake.maxCells = 4;
+        snake.dx = grid;
+        snake.dy = 0;
+
+        apple.x = getRandomInt(0, 25) * grid;
+        apple.y = getRandomInt(0, 25) * grid;
+        updateScore();
+      }
+    }
+  });
+}
+
+function changeDirection(dir) {
+  if (dir === 'left' && snake.dx === 0) {
+    snake.dx = -grid;
+    snake.dy = 0;
+  } else if (dir === 'up' && snake.dy === 0) {
+    snake.dy = -grid;
+    snake.dx = 0;
+  } else if (dir === 'right' && snake.dx === 0) {
+    snake.dx = grid;
+    snake.dy = 0;
+  } else if (dir === 'down' && snake.dy === 0) {
+    snake.dy = grid;
+    snake.dx = 0;
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.which === 37) changeDirection('left');
+  else if (e.which === 38) changeDirection('up');
+  else if (e.which === 39) changeDirection('right');
+  else if (e.which === 40) changeDirection('down');
+});
+
+document.querySelectorAll('.button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    changeDirection(btn.getAttribute('data-dir'));
+  });
+});
+
+updateScore();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
