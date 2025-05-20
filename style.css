@@ -53,12 +53,15 @@ h2 {
   height: 170px;
   background: #111;
   border-radius: 12px;
+  overflow: hidden;
   text-decoration: none;
   box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  transition: transform 0.02s;
+  transition: transform 0.2s;
 }
 
-
+.game-box:hover {
+  transform: scale(1.03);
+}
 
 .game-box img {
   width: 100%;
@@ -77,11 +80,13 @@ h2 {
   text-align: center;
   color: #fff;
   background: rgba(0, 0, 0, 0.6);
-
+  opacity: 0;
   transition: opacity 0.3s ease;
 }
 
-
+.game-box:hover .game-name {
+  opacity: 1;
+}
 
 .placeholder {
   background: repeating-linear-gradient(
