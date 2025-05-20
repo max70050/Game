@@ -59,9 +59,7 @@ h2 {
   transition: transform 0.02s;
 }
 
-.game-box:hover {
-  transform: scale(1.03);
-}
+
 
 .game-box img {
   width: 100%;
